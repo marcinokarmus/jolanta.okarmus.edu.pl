@@ -1,0 +1,1093 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sygnały analogowe i cyfrowe</title>
+<style>
+:root{
+  --bg:#f7f7f4; --panel:#ffffff; --fg:#1d2330; --muted:#5d6675; --grid:#d9dce2;
+  --accent:#1f6fd1; --accent2:#e2741d; --accent3:#1f9a5a; --danger:#d23b3b; --violet:#7a4cc9;
+  --chip:#eef2f8;
+}
+:root[data-theme="dark"]{
+  --bg:#12151b; --panel:#1b2029; --fg:#e9edf3; --muted:#9aa4b4; --grid:#323a47;
+  --accent:#5aa2ff; --accent2:#ff9a4a; --accent3:#43c785; --danger:#ff6464; --violet:#ae8cff;
+  --chip:#232a36;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;overflow:hidden}
+.slide{position:absolute;inset:0;padding:3.2vh 5vw 9vh;display:none;flex-direction:column;gap:1.6vh;overflow:auto}
+.slide.active{display:flex}
+.kicker{font-size:clamp(13px,1.05vw,18px);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-size:clamp(34px,4.6vw,80px);margin:0;line-height:1.05}
+h2{font-size:clamp(26px,3.0vw,50px);margin:0;line-height:1.1}
+p,li,td,th,label,.txt{font-size:clamp(17px,1.55vw,27px);line-height:1.4}
+p{margin:.2em 0}
+ul{margin:.2em 0;padding-left:1.2em} li{margin:.25em 0}
+.muted{color:var(--muted)}
+.big{font-size:clamp(22px,2.2vw,38px)}
+.formula{font-family:"Cambria Math","Times New Roman",serif;font-size:clamp(22px,2.3vw,42px);white-space:nowrap;background:var(--panel);
+  border:2px solid var(--grid);border-radius:14px;padding:.3em .8em;display:inline-block}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:3vw;align-items:start}
+.cols.c3{grid-template-columns:1fr 1fr 1fr}
+.cols.c64{grid-template-columns:1.5fr 1fr}
+.card{background:var(--panel);border:1px solid var(--grid);border-radius:16px;padding:1.4vh 1.4vw}
+.card h3{margin:.1em 0 .3em;font-size:clamp(19px,1.7vw,30px)}
+.card .emo{font-size:clamp(30px,3vw,54px)}
+canvas.viz{width:100%;height:46vh;display:block;background:var(--panel);border:1px solid var(--grid);border-radius:14px}
+canvas.dark{background:#0b0d12}
+.ctrl{display:flex;gap:1.2vw;align-items:center;flex-wrap:wrap}
+.ctrl label{display:flex;align-items:center;gap:.6em;font-size:clamp(15px,1.3vw,22px)}
+input[type=range]{width:clamp(160px,18vw,340px);accent-color:var(--accent);height:28px}
+button,select{font:inherit;font-size:clamp(15px,1.25vw,21px);padding:.35em .8em;border-radius:10px;border:1px solid var(--grid);
+  background:var(--panel);color:var(--fg);cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+button.on{background:var(--danger);border-color:var(--danger);color:#fff}
+.val{font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent);min-width:5ch;display:inline-block}
+.info{font-size:clamp(15px,1.3vw,22px);color:var(--muted)}
+.info b{color:var(--fg)}
+.bits{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:clamp(15px,1.4vw,24px);color:var(--accent3);word-break:break-all}
+.msg{color:var(--danger);font-size:clamp(14px,1.1vw,18px)}
+table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid var(--grid);padding:.35em .6em;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.tag{display:inline-block;background:var(--chip);border-radius:8px;padding:.05em .45em;font-weight:600}
+.chain{display:flex;align-items:center;justify-content:center;gap:.8vw;flex-wrap:wrap;margin-top:2vh}
+.chain .box{background:var(--panel);border:2px solid var(--grid);border-radius:14px;padding:1.2vh 1vw;text-align:center;min-width:9vw}
+.chain .box .emo{font-size:clamp(28px,3vw,52px);display:block}
+.chain .box.a{border-color:var(--accent2)} .chain .box.d{border-color:var(--accent3)}
+.chain .arr{font-size:clamp(22px,2.4vw,40px);color:var(--muted)}
+.grid4{display:grid;grid-template-columns:1fr 1fr;gap:1.4vh 2vw}
+.grid4 canvas{width:100%;height:20vh;display:block;background:var(--panel);border:1px solid var(--grid);border-radius:12px}
+.grid4 .cap{font-size:clamp(14px,1.2vw,21px);margin:.2em 0 .5em}
+.pads{display:grid;grid-template-columns:repeat(4,1fr);gap:.8vw;max-width:30vw}
+.pads button{font-size:clamp(20px,2vw,36px);padding:.5em 0;font-weight:700}
+.pads button.ltr{color:var(--muted)}
+details{background:var(--panel);border:1px solid var(--grid);border-radius:12px;padding:.6vh 1vw;margin:.6vh 0}
+details summary{cursor:pointer;font-size:clamp(17px,1.5vw,26px);font-weight:600}
+details p{color:var(--accent3);font-weight:600}
+.title-wrap{margin:auto 0;display:flex;flex-direction:column;gap:2vh}
+.hint{position:fixed;right:1.2vw;top:1vh;font-size:13px;color:var(--muted);opacity:.7}
+/* pasek dolny */
+#bar{position:fixed;left:0;right:0;bottom:0;height:6vh;min-height:44px;display:flex;align-items:center;gap:.8vw;padding:0 1.2vw;
+  background:var(--panel);border-top:1px solid var(--grid);z-index:10}
+#bar button{padding:.2em .7em}
+#prog{flex:1;height:6px;background:var(--grid);border-radius:4px;overflow:hidden}
+#prog div{height:100%;background:var(--accent);width:0}
+#cnt{font-variant-numeric:tabular-nums;color:var(--muted);font-size:15px;min-width:5ch;text-align:right}
+#vol{width:110px}
+#notes{position:fixed;left:0;right:0;bottom:6vh;max-height:38vh;overflow:auto;background:var(--panel);border-top:3px solid var(--accent2);
+  padding:1.2vh 2vw;display:none;z-index:9;box-shadow:0 -8px 24px rgba(0,0,0,.15)}
+#notes.show{display:block}
+#notes, #notes *{font-size:clamp(14px,1.15vw,19px)}
+.notes{display:none}
+@media (max-width:800px){.cols,.cols.c3,.cols.c64,.grid4{grid-template-columns:1fr}.pads{max-width:none}}
+</style>
+</head>
+<body>
+
+<div class="hint">← → przewijanie · N notatki · S okno prowadzącej · F pełny ekran · T motyw</div>
+
+<!-- ================= 1. TYTUŁ ================= -->
+<section class="slide" id="s-title">
+  <div class="title-wrap">
+    <div class="kicker">Systemy teleinformatyczne · wykład</div>
+    <h1>Sygnały analogowe i cyfrowe</h1>
+    <p class="big muted">Parametry sygnału: amplituda, częstotliwość, okres, faza — i co z tego słychać</p>
+    <p class="muted">mgr Jolanta Okarmus · Instytut Nauk Inżynieryjno-Technicznych</p>
+    <p class="info">Na tym wykładzie będzie głośno 🔊 — dźwięk pozwala <b>usłyszeć</b> parametry sygnału.</p>
+  </div>
+  <aside class="notes">
+    <p><b>Plan czasu (ok. 80 min):</b> wstęp 5 min · analog/cyfra 25 min · parametry sinusoidy 25 min · widmo i spektrogram 15 min · podsumowanie + quiz 10 min.</p>
+    <p><b>Przed wykładem:</b> otwórz plik w <b>Chrome</b> (lub Edge). Podłącz głośniki sali. Kliknij raz dowolny przycisk „Odtwórz", żeby przeglądarka pozwoliła na dźwięk. Na slajdzie ze spektrogramem przeglądarka zapyta o mikrofon — zezwól.</p>
+    <p>Głośność ogólną reguluje suwak 🔊 na dolnym pasku (zacznij od połowy i dopasuj głośnikami).</p>
+  </aside>
+</section>
+
+<!-- ================= 2. PLAN ================= -->
+<section class="slide" id="s-plan">
+  <div class="kicker">Plan</div>
+  <h2>O czym dziś?</h2>
+  <div class="cols">
+    <div class="card"><h3>1. Czym jest sygnał</h3><p class="muted">i dlaczego telekomunikacja to „przesyłanie sygnałów"</p></div>
+    <div class="card"><h3>2. Analogowy czy cyfrowy?</h3><p class="muted">ciągłość i dyskretność, próbkowanie, kwantyzacja, odporność na zakłócenia</p></div>
+    <div class="card"><h3>3. Parametry sinusoidy</h3><p class="muted">amplituda, okres, częstotliwość, faza — na dźwięku</p></div>
+    <div class="card"><h3>4. Widmo i spektrogram</h3><p class="muted">jak „rozłożyć" dźwięk na częstotliwości; telefon i tony DTMF</p></div>
+  </div>
+  <aside class="notes">
+    <p>Krótko zapowiedz, że wykład jest „do słuchania i oglądania". Ostatnie 10 minut — szybki quiz, warto o tym powiedzieć na starcie (lepiej słuchają).</p>
+  </aside>
+</section>
+
+<!-- ================= 3. SYGNAŁ ================= -->
+<section class="slide" id="s-signal">
+  <div class="kicker">Część 1 · Sygnał</div>
+  <h2>Sygnał = zmiana, która niesie informację</h2>
+  <p>Sygnał to <b>wielkość fizyczna zmieniająca się w czasie</b>, w której zapisana jest informacja.</p>
+  <div class="cols c3">
+    <div class="card"><div class="emo">🗣️</div><h3>Głos</h3><p class="muted">zmiany ciśnienia powietrza</p></div>
+    <div class="card"><div class="emo">🔌</div><h3>Kabel (skrętka)</h3><p class="muted">zmiany napięcia elektrycznego</p></div>
+    <div class="card"><div class="emo">💡</div><h3>Światłowód</h3><p class="muted">zmiany natężenia światła</p></div>
+    <div class="card"><div class="emo">📡</div><h3>Wi-Fi, radio, GSM</h3><p class="muted">zmiany pola elektromagnetycznego</p></div>
+    <div class="card"><div class="emo">🚦</div><h3>Sygnalizator</h3><p class="muted">zmiana koloru światła</p></div>
+    <div class="card"><div class="emo">🥁</div><h3>Tam-tam</h3><p class="muted">uderzenia w rytmie</p></div>
+  </div>
+  <p class="big">Coś, co się <b>nie zmienia</b>, nie niesie żadnej informacji.</p>
+  <aside class="notes">
+    <p><b>Kluczowa myśl:</b> informacja = zmiana. Stały sygnał (np. ciągły, niezmienny ton) nic nie mówi, dopiero gdy się zmienia, możemy coś „zakodować".</p>
+    <p>Pytanie do sali: „Jaki sygnał wysyła wasz telefon, gdy rozmawiacie?" — zmiany pola elektromagnetycznego (fale radiowe).</p>
+  </aside>
+</section>
+
+<!-- ================= 4. POCHYLNIA vs SCHODY ================= -->
+<section class="slide" id="s-ramp">
+  <div class="kicker">Część 2 · Analogowy czy cyfrowy?</div>
+  <h2>Pochylnia czy schody?</h2>
+  <canvas class="viz" id="cv-ramp" style="height:50vh"></canvas>
+  <div class="cols">
+    <p><b style="color:var(--accent2)">Analogowy</b> — może przyjąć <b>każdą</b> wartość: 1,3 m, 1,3472 m, 1,34729… (wartości <b>ciągłe</b>)</p>
+    <p><b style="color:var(--accent3)">Cyfrowy</b> — tylko <b>wybrane</b>, policzalne wartości: stopień 0, 1, 2, 3… (wartości <b>dyskretne</b>)</p>
+  </div>
+  <aside class="notes">
+    <p><b>Najważniejsza analogia wykładu.</b> Na pochylni kulka może zatrzymać się na dowolnej wysokości — to sygnał analogowy. Na schodach można stać tylko na którymś stopniu — „pomiędzy" nie ma — to sygnał cyfrowy.</p>
+    <p>Zwróć uwagę na liczniki: po lewej liczba ma „nieskończenie wiele" miejsc po przecinku, po prawej zawsze liczba całkowita (numer stopnia). Numer stopnia łatwo zapisać jako liczbę binarną — stąd „cyfrowy".</p>
+    <p>„Dyskretny" w technice NIE znaczy „dyskretny = taktowny", tylko „oddzielny, policzalny, skokowy".</p>
+  </aside>
+</section>
+
+<!-- ================= 5. ANALOGIE ================= -->
+<section class="slide" id="s-analogies">
+  <div class="kicker">Część 2 · Analogowy czy cyfrowy?</div>
+  <h2>Znamy to z codzienności</h2>
+  <table>
+    <tr><th style="width:22%"></th><th style="color:var(--accent2)">Analogowo (ciągle)</th><th style="color:var(--accent3)">Cyfrowo (skokowo)</th></tr>
+    <tr><td>🕰️ Zegar</td><td>wskazówka płynnie się przesuwa</td><td>12:45 → 12:46 — skok co minutę</td></tr>
+    <tr><td>🌡️ Termometr</td><td>słupek cieczy na dowolnej wysokości</td><td>wyświetlacz: 36,6 °C — nic pomiędzy 36,6 a 36,7</td></tr>
+    <tr><td>💡 Światło</td><td>ściemniacz z pokrętłem</td><td>zwykły włącznik: 0 lub 1</td></tr>
+    <tr><td>🎵 Muzyka</td><td>płyta winylowa — rowek o falistym kształcie</td><td>płyta CD / MP3 — ciąg liczb (zer i jedynek)</td></tr>
+    <tr><td>📞 Telefon</td><td>stary telefon stacjonarny — napięcie „naśladuje" głos</td><td>komórka, VoIP — głos zamieniony na bity</td></tr>
+    <tr><td>📺 Telewizja</td><td>dawna telewizja naziemna (do 2013 r.)</td><td>DVB-T2, telewizja internetowa</td></tr>
+  </table>
+  <aside class="notes">
+    <p>Zapytaj salę o własne przykłady zanim pokażesz tabelę (np. linijka vs. suwmiarka elektroniczna, kasety VHS vs. DVD).</p>
+    <p>Ciekawostka: w Polsce analogowa telewizja naziemna została wyłączona w 2013 r.</p>
+  </aside>
+</section>
+
+<!-- ================= 6. 2x2 CIĄGŁOŚĆ / DYSKRETNOŚĆ ================= -->
+<section class="slide" id="s-grid">
+  <div class="kicker">Część 2 · Ciągłość i dyskretność</div>
+  <h2>Ciągły / dyskretny — w czasie i w wartości</h2>
+  <div class="grid4">
+    <div><canvas id="cv-g1"></canvas><p class="cap"><b style="color:var(--accent2)">ANALOGOWY</b> — ciągły w czasie i w wartości</p></div>
+    <div><canvas id="cv-g2"></canvas><p class="cap"><b>Spróbkowany</b> — dyskretny w czasie (tylko wybrane chwile), wartości dowolne</p></div>
+    <div><canvas id="cv-g3"></canvas><p class="cap"><b>Skwantowany</b> — wartości tylko na „stopniach", czas ciągły</p></div>
+    <div><canvas id="cv-g4"></canvas><p class="cap"><b style="color:var(--accent3)">CYFROWY</b> — dyskretny w czasie <u>i</u> w wartości</p></div>
+  </div>
+  <aside class="notes">
+    <p>To ten sam sygnał pokazany na cztery sposoby. Są <b>dwie osie</b>, na których coś może być ciągłe lub dyskretne:</p>
+    <ul><li><b>czas</b> (oś pozioma) — czy znamy wartość w każdej chwili, czy tylko co pewien czas (próbki)?</li>
+    <li><b>wartość</b> (oś pionowa) — czy wartość może być dowolna, czy tylko z listy poziomów („schodki")?</li></ul>
+    <p>Sygnał <b>cyfrowy</b> = dyskretny w obu osiach → da się go zapisać jako skończony ciąg liczb, a więc bitów.</p>
+    <p>Dwa kroki zamiany: <b>próbkowanie</b> (czas) i <b>kwantyzacja</b> (wartość). Pokażemy to za chwilę na żywo.</p>
+  </aside>
+</section>
+
+<!-- ================= 7. ŁAŃCUCH A/C – C/A ================= -->
+<section class="slide" id="s-chain">
+  <div class="kicker">Część 2 · Przetwarzanie</div>
+  <h2>Świat jest analogowy — komputery są cyfrowe</h2>
+  <div class="chain">
+    <div class="box a"><span class="emo">🗣️</span>głos<br><span class="muted">fala ciśnienia</span></div><span class="arr">→</span>
+    <div class="box a"><span class="emo">🎤</span>mikrofon<br><span class="muted">napięcie</span></div><span class="arr">→</span>
+    <div class="box"><span class="emo">⚙️</span><b>przetwornik A/C</b><br><span class="muted">ADC</span></div><span class="arr">→</span>
+    <div class="box d"><span class="emo">💾</span>0101 1100…<br><span class="muted">zapis / transmisja</span></div><span class="arr">→</span>
+    <div class="box"><span class="emo">⚙️</span><b>przetwornik C/A</b><br><span class="muted">DAC</span></div><span class="arr">→</span>
+    <div class="box a"><span class="emo">🔊</span>głośnik<br><span class="muted">fala ciśnienia</span></div>
+  </div>
+  <div class="cols" style="margin-top:3vh">
+    <div class="card"><h3>A/C — analogowo-cyfrowy</h3><p>próbkowanie + kwantyzacja + zapis w bitach</p></div>
+    <div class="card"><h3>C/A — cyfrowo-analogowy</h3><p>z liczb z powrotem robi płynne napięcie</p></div>
+  </div>
+  <aside class="notes">
+    <p>Każdy smartfon, karta dźwiękowa, modem ma takie przetworniki. Na początku i na końcu łańcucha zawsze jest świat analogowy (ucho, oko), w środku — cyfrowy (transmisja, zapis, przetwarzanie).</p>
+    <p>Angielskie skróty: ADC = Analog-to-Digital Converter, DAC = Digital-to-Analog Converter (pojawiają się w specyfikacjach sprzętu audio).</p>
+  </aside>
+</section>
+
+<!-- ================= 8. PRÓBKOWANIE I KWANTYZACJA – INTERAKTYWNIE ================= -->
+<section class="slide" id="s-adc">
+  <div class="kicker">Część 2 · Z analogowego na cyfrowy</div>
+  <h2>Próbkowanie i kwantyzacja — na żywo</h2>
+  <div class="ctrl">
+    <label>Liczba próbek (czas) <input type="range" id="adc-n" min="4" max="64" value="12"> <span class="val" id="adc-nv"></span></label>
+    <label>Liczba bitów (wartość) <input type="range" id="adc-b" min="1" max="8" value="3"> <span class="val" id="adc-bv"></span></label>
+  </div>
+  <canvas class="viz" id="cv-adc" style="height:42vh"></canvas>
+  <div class="info" id="adc-info"></div>
+  <div class="bits" id="adc-bits"></div>
+  <aside class="notes">
+    <p><b>Jak prowadzić:</b> zacznij od małych wartości (4 próbki, 1 bit) — pomarańczowe „schodki" są bardzo niepodobne do szarej fali. Potem zwiększaj powoli <b>liczbę próbek</b>, a następnie <b>liczbę bitów</b> — schodki coraz lepiej przylegają do oryginału.</p>
+    <ul><li>Więcej próbek = częstsze „pytanie" sygnału o wartość (częstotliwość próbkowania).</li>
+    <li>Więcej bitów = więcej poziomów: 1 bit → 2 poziomy, 2 → 4, 3 → 8, 8 → 256, 16 bitów → 65 536.</li>
+    <li>Cena: <b>więcej danych do przesłania</b> (liczba próbek × liczba bitów).</li></ul>
+    <p><b>Przykład CD:</b> 44 100 próbek na sekundę × 16 bitów × 2 kanały = ok. 1,4 Mb/s. Telefonia (G.711): 8000 próbek/s × 8 bitów = 64 kb/s.</p>
+    <p>Zielone cyfry na dole — to już jest sygnał cyfrowy, który wysyłamy (kody kolejnych próbek).</p>
+  </aside>
+</section>
+
+<!-- ================= 9. ALIASING ================= -->
+<section class="slide" id="s-alias">
+  <div class="kicker">Część 2 · Ciekawostka</div>
+  <h2>Za rzadko próbkujesz — widzisz coś, czego nie ma</h2>
+  <div class="ctrl">
+    <label>Częstotliwość sygnału <input type="range" id="al-f" min="1" max="28" value="2"> <span class="val" id="al-fv"></span></label>
+    <span class="info">próbkowanie stałe: <b>10 próbek na sekundę</b></span>
+  </div>
+  <canvas class="viz" id="cv-alias" style="height:44vh"></canvas>
+  <p class="info" id="al-info"></p>
+  <p>Zasada (twierdzenie o próbkowaniu): próbkuj <b>co najmniej 2 razy szybciej</b> niż najszybsza zmiana sygnału.</p>
+  <aside class="notes">
+    <p>Przesuwaj suwak w prawo. Do 5 Hz (połowa z 10 próbek/s) czerwona przerywana linia się nie pojawia — próbki dobrze opisują sygnał. Powyżej 5 Hz próbki układają się w <b>wolniejszą, fałszywą falę</b> (czerwona) — to zjawisko <b>aliasingu</b>.</p>
+    <p><b>Analogia, którą każdy zna:</b> na filmach koła samochodu czy śmigło helikoptera czasem „kręcą się do tyłu" albo stoją — kamera robi zdjęcia (próbki) za rzadko w stosunku do obrotów.</p>
+    <p>Dlatego CD ma 44 100 próbek/s: człowiek słyszy do ok. 20 000 Hz, a 2 × 20 000 = 40 000 (plus zapas). Telefon: głos do 3400 Hz → 8000 próbek/s.</p>
+  </aside>
+</section>
+
+<!-- ================= 10. ODPORNOŚĆ NA ZAKŁÓCENIA ================= -->
+<section class="slide" id="s-noise">
+  <div class="kicker">Część 2 · Po co ta cała cyfryzacja?</div>
+  <h2>Szum psuje analog na zawsze — cyfrę da się odtworzyć</h2>
+  <div class="ctrl">
+    <label>Poziom zakłóceń <input type="range" id="nz-s" min="0" max="60" value="15"> <span class="val" id="nz-sv"></span></label>
+    <label>Liczba odcinków (wzmacniaków) <input type="range" id="nz-m" min="1" max="10" value="3"> <span class="val" id="nz-mv"></span></label>
+    <button id="nz-new">🎲 nowy szum</button>
+  </div>
+  <canvas class="viz" id="cv-noise" style="height:50vh"></canvas>
+  <p class="info" id="nz-info"></p>
+  <aside class="notes">
+    <p>Sygnał na długim kablu słabnie, więc co kawałek stoi wzmacniak. Każdy odcinek dokłada trochę <b>szumu</b> (zakłóceń).</p>
+    <ul><li><b>Analog:</b> wzmacniak nie wie, co jest sygnałem, a co szumem — wzmacnia oba. Szum się sumuje (zwiększ liczbę odcinków → drugi wykres coraz gorszy).</li>
+    <li><b>Cyfra:</b> odbiornik pyta tylko „bliżej 0 czy bliżej 1?" (próg w połowie) i wysyła dalej <b>czysty</b> sygnał — to tzw. <b>regeneracja</b>. Przy umiarkowanym szumie wynik jest bezbłędny.</li></ul>
+    <p>Dopiero przy bardzo dużym szumie (przesuń suwak mocno w prawo) pojawiają się czerwone, błędne bity — wtedy pomagają kody korekcyjne i sumy kontrolne (będzie później w semestrze).</p>
+    <p><b>Wniosek:</b> dlatego telekomunikacja przeszła na cyfrę: kopia cyfrowa = identyczna z oryginałem, kopia analogowa = zawsze trochę gorsza (jak ksero z ksero).</p>
+  </aside>
+</section>
+
+<!-- ================= 11. SINUSOIDA ================= -->
+<section class="slide" id="s-sine">
+  <div class="kicker">Część 3 · Parametry sygnału</div>
+  <h2>Sinusoida — „cegiełka" każdego sygnału</h2>
+  <div class="cols c64">
+    <canvas class="viz" id="cv-sine" style="height:50vh"></canvas>
+    <div>
+      <p class="formula">s(t) = <b style="color:var(--accent2)">A</b> · sin(2π · <b style="color:var(--accent)">f</b> · t + <b style="color:var(--violet)">φ</b>)</p>
+      <ul style="margin-top:2vh">
+        <li><b style="color:var(--accent2)">A</b> — amplituda: <i>jak duże</i> wychylenie</li>
+        <li><b style="color:var(--accent3)">T</b> — okres: <i>jak długo</i> trwa jeden cykl</li>
+        <li><b style="color:var(--accent)">f</b> — częstotliwość: <i>ile cykli na sekundę</i></li>
+        <li><b style="color:var(--violet)">φ</b> — faza: <i>w którym miejscu cyklu</i> jesteśmy na starcie</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Sinusoida to najprostszy sygnał okresowy (powtarzający się). Za chwilę zobaczymy, że <b>każdy</b> dźwięk, a nawet sygnał cyfrowy, da się złożyć z wielu sinusoid — dlatego jest taka ważna.</p>
+    <p>Wzoru nie trzeba się bać: każda litera to jedno „pokrętło". Teraz pokręcimy każdym po kolei i posłuchamy.</p>
+  </aside>
+</section>
+
+<!-- ================= 12. AMPLITUDA ================= -->
+<section class="slide" id="s-amp">
+  <div class="kicker">Część 3 · Parametry sygnału</div>
+  <h2>Amplituda <span class="muted">A</span> = głośność</h2>
+  <div class="ctrl">
+    <button class="primary" id="amp-play">▶ Odtwórz</button>
+    <label>Amplituda <input type="range" id="amp-a" min="0" max="100" value="50"> <span class="val" id="amp-av"></span></label>
+    <span class="info">częstotliwość stała: 330 Hz</span>
+  </div>
+  <canvas class="viz" id="cv-amp"></canvas>
+  <p><b>Amplituda</b> — największe wychylenie od zera. Jednostka zależy od sygnału: wolty [V] w kablu, paskale [Pa] dla dźwięku.</p>
+  <aside class="notes">
+    <p>Włącz dźwięk i przesuwaj suwak: fala „rośnie i maleje" w pionie, ale szerokość (gęstość) fal się nie zmienia — <b>wysokość dźwięku zostaje ta sama, zmienia się tylko głośność</b>.</p>
+    <p>Przerywana linia = amplituda maksymalna (dla porównania).</p>
+    <p>W telekomunikacji: amplituda sygnału maleje wraz z długością kabla (tłumienie) — dlatego potrzebne są wzmacniaki. Głośność odbieramy logarytmicznie (decybele) — dwa razy większa amplituda nie brzmi „dwa razy głośniej".</p>
+  </aside>
+</section>
+
+<!-- ================= 13. CZĘSTOTLIWOŚĆ I OKRES ================= -->
+<section class="slide" id="s-freq">
+  <div class="kicker">Część 3 · Parametry sygnału</div>
+  <h2>Częstotliwość <span class="muted">f</span> = wysokość dźwięku</h2>
+  <div class="ctrl">
+    <button class="primary" id="fr-play">▶ Odtwórz</button>
+    <label>Częstotliwość <input type="range" id="fr-f" min="0" max="1000" value="500"> <span class="val" id="fr-fv"></span></label>
+    <span class="info" id="fr-tv"></span>
+  </div>
+  <div class="ctrl">
+    <span class="info">gotowe:</span>
+    <button data-f="50">50 Hz · prąd w gniazdku</button>
+    <button data-f="425">425 Hz · sygnał „wolnej linii"</button>
+    <button data-f="440">440 Hz · kamerton (dźwięk A)</button>
+    <button data-f="1000">1000 Hz</button>
+    <button data-f="3000">3000 Hz</button>
+  </div>
+  <canvas class="viz" id="cv-freq" style="height:36vh"></canvas>
+  <p class="big"><b style="color:var(--accent)">f</b> = 1 / <b style="color:var(--accent3)">T</b> &nbsp; · &nbsp; 1 Hz (herc) = 1 cykl na sekundę</p>
+  <aside class="notes">
+    <p>Okno wykresu ma zawsze tę samą szerokość: <b>20 milisekund</b>. Im wyższa częstotliwość, tym więcej fal mieści się w oknie (fale są „gęstsze"), a <b>okres T</b> jest krótszy.</p>
+    <p>Liczenie: 50 Hz → T = 1/50 s = 0,02 s = 20 ms (w oknie mieści się dokładnie jeden cykl!). 1000 Hz → T = 1 ms.</p>
+    <p>Uwaga: 50 Hz z małych głośników laptopa/rzutnika może być prawie niesłyszalne — to wina głośnika, nie sygnału (dobry przykład, że urządzenie ma swoje <b>pasmo przenoszenia</b>).</p>
+    <p>Zależność odwrotna: <b>wysoka częstotliwość ↔ krótki okres</b>.</p>
+  </aside>
+</section>
+
+<!-- ================= 14. PRZYKŁADY CZĘSTOTLIWOŚCI ================= -->
+<section class="slide" id="s-ftable">
+  <div class="kicker">Część 3 · Parametry sygnału</div>
+  <h2>Częstotliwości wokół nas</h2>
+  <div class="cols c64">
+    <table>
+      <tr><th>Co</th><th>Częstotliwość</th><th>Okres</th></tr>
+      <tr><td>prąd w gniazdku</td><td>50 Hz</td><td>20 ms</td></tr>
+      <tr><td>słuch człowieka</td><td>ok. 20 Hz – 20 kHz</td><td>50 ms – 0,05 ms</td></tr>
+      <tr><td>pasmo rozmowy telefonicznej</td><td>300 – 3400 Hz</td><td></td></tr>
+      <tr><td>radio FM</td><td>87,5 – 108 MHz</td><td>ok. 10 ns</td></tr>
+      <tr><td>GSM / LTE / 5G</td><td>0,7 – 3,8 GHz</td><td></td></tr>
+      <tr><td>Wi-Fi</td><td>2,4 / 5 / 6 GHz</td><td>ok. 0,4 ns (2,4 GHz)</td></tr>
+      <tr><td>światłowód (1550 nm)</td><td>ok. 193 THz</td><td></td></tr>
+    </table>
+    <div class="card">
+      <h3>Przedrostki</h3>
+      <p>1 kHz = 1 000 Hz</p><p>1 MHz = 1 000 000 Hz</p><p>1 GHz = 10<sup>9</sup> Hz</p><p>1 THz = 10<sup>12</sup> Hz</p>
+      <h3 style="margin-top:1.4vh">Sprawdź swój słuch</h3>
+      <div class="ctrl">
+        <button data-hf="8000">8 kHz</button><button data-hf="12000">12 kHz</button>
+        <button data-hf="15000">15 kHz</button><button data-hf="17000">17 kHz</button><button data-hf="19000">19 kHz</button>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Pokaż skalę: od 50 Hz w gniazdku po setki teraherców w światłowodzie — wszystko to „ten sam" parametr.</p>
+    <p><b>Test słuchu:</b> kliknij kolejno 8, 12, 15, 17 kHz (każdy ton trwa 1,5 s) i poproś o podniesienie ręki, kto słyszy. Studenci zwykle słyszą wyżej niż prowadzący — górna granica słuchu spada z wiekiem. Zastrzeżenie: głośniki w sali mogą nie odtwarzać najwyższych tonów.</p>
+    <p>Wzór na ewentualne pytanie o długość fali: λ = v / f (dla dźwięku v ≈ 343 m/s, dla fal radiowych v ≈ 300 000 km/s).</p>
+  </aside>
+</section>
+
+<!-- ================= 15. FAZA – KOŁO ================= -->
+<section class="slide" id="s-phasor">
+  <div class="kicker">Część 3 · Parametry sygnału</div>
+  <h2>Faza <span class="muted">φ</span> = „przesunięcie startu"</h2>
+  <div class="ctrl">
+    <label>Przesunięcie fazy φ <input type="range" id="ph-p" min="0" max="360" step="15" value="90"> <span class="val" id="ph-pv"></span></label>
+    <button id="ph-run">⏸ pauza</button>
+  </div>
+  <canvas class="viz" id="cv-phasor" style="height:48vh"></canvas>
+  <p>Sinusoida to <b>cień punktu krążącego po kole</b>. Faza mówi, o jaki <b>kąt</b> jeden punkt wyprzedza drugi: 360° = cały okres.</p>
+  <aside class="notes">
+    <p><b>Jak tłumaczyć fazę:</b> wyobraź sobie dwa punkty (dwóch biegaczy) na okrągłej bieżni, biegnących z tą samą prędkością. Pomarańczowy wystartował wcześniej — jest stale o kąt φ przed niebieskim. Fale mają <b>tę samą amplitudę i częstotliwość</b>, różnią się tylko tym, „kiedy" są w szczycie.</p>
+    <p>Pokaż: 0° — fale nakładają się idealnie (zgodne w fazie). 90° — przesunięte o ćwierć okresu. 180° — gdy jedna jest na górze, druga na dole (przeciwne fazy). 360° — znowu to samo co 0°.</p>
+    <p>Faza = przesunięcie w czasie wyrażone jako kąt: φ = 360° · (opóźnienie / okres). Np. przy 50 Hz (T = 20 ms) opóźnienie 5 ms = 90°.</p>
+  </aside>
+</section>
+
+<!-- ================= 16. FAZA – ANALOGIE ================= -->
+<section class="slide" id="s-phase-an">
+  <div class="kicker">Część 3 · Parametry sygnału</div>
+  <h2>Faza — jak ją sobie wyobrazić?</h2>
+  <div class="cols c3">
+    <div class="card"><div class="emo">🏃‍♀️🏃</div><h3>Biegacze na bieżni</h3><p>Biegną tak samo szybko, ale jeden wystartował później. Różnica pozycji na okrążeniu = faza.</p></div>
+    <div class="card"><div class="emo">🛝</div><h3>Huśtawka</h3><p>Pchasz w dobrym momencie (zgodnie w fazie) — huśtawka leci wyżej. Pchasz w złym (przeciwnie) — hamujesz ją.</p></div>
+    <div class="card"><div class="emo">👏</div><h3>Klaskanie z salą</h3><p>Wszyscy w tym samym rytmie, ale jedna osoba klaszcze „pół taktu" później — ta sama częstotliwość, inna faza.</p></div>
+    <div class="card"><div class="emo">🎧</div><h3>Słuchawki z ANC</h3><p>Mikrofon łapie hałas, słuchawka gra go <b>w przeciwnej fazie</b> (180°) — fale się znoszą, robi się cicho.</p></div>
+    <div class="card"><div class="emo">🔊🔊</div><h3>Odwrotnie podłączony głośnik</h3><p>Zamienione kable + i − w jednym głośniku: dwa głośniki grają w przeciwnej fazie i znika bas.</p></div>
+    <div class="card"><div class="emo">📶</div><h3>Telekomunikacja</h3><p>Zmianą fazy można zakodować bity (modulacja PSK — Wi-Fi, LTE). O tym na kolejnym wykładzie.</p></div>
+  </div>
+  <aside class="notes">
+    <p><b>Uczciwa uwaga:</b> fazy pojedynczego tonu ucho prawie nie słyszy — ton przesunięty w fazie brzmi tak samo. Fazę słychać dopiero wtedy, gdy <b>dwie fale się spotykają</b> i dodają (kolejny slajd). Dlatego najlepsze analogie to huśtawka i słuchawki z redukcją szumów.</p>
+    <p>Wzmianka o PSK to zapowiedź tematu „Modulacje analogowe i cyfrowe" — nie trzeba jej rozwijać.</p>
+  </aside>
+</section>
+
+<!-- ================= 17. FAZA – INTERFERENCJA ================= -->
+<section class="slide" id="s-interf">
+  <div class="kicker">Część 3 · Parametry sygnału</div>
+  <h2>Usłysz fazę: dwie fale razem</h2>
+  <div class="ctrl">
+    <button class="primary" id="in-play">▶ Odtwórz sumę</button>
+    <label>Przesunięcie fazy fali 2 <input type="range" id="in-p" min="0" max="360" step="5" value="0"> <span class="val" id="in-pv"></span></label>
+    <button data-ph="0">0°</button><button data-ph="90">90°</button><button data-ph="120">120°</button><button data-ph="180">180°</button>
+  </div>
+  <canvas class="viz" id="cv-interf" style="height:50vh"></canvas>
+  <p class="info" id="in-info"></p>
+  <aside class="notes">
+    <p>Włącz dźwięk na 0° — dwie identyczne fale się wzmacniają (głośno). Powoli przesuwaj do 180° — dźwięk cichnie, przy 180° <b>zanika całkowicie</b>: fale się znoszą. Tak działa aktywna redukcja szumów w słuchawkach.</p>
+    <p>Dolny wykres (zielony) to suma — to ją słyszymy. Wysokość dźwięku się nie zmienia, zmienia się głośność sumy.</p>
+    <p>Gdzie to ma znaczenie w teleinformatyce: fale radiowe odbite od ścian docierają do anteny z różnym opóźnieniem (różną fazą) — mogą się wzmacniać lub znosić. Dlatego Wi-Fi w jednym miejscu pokoju działa świetnie, a metr dalej słabo (zjawisko wielodrogowości).</p>
+  </aside>
+</section>
+
+<!-- ================= 18. WIDMO – WPROWADZENIE ================= -->
+<section class="slide" id="s-specintro">
+  <div class="kicker">Część 4 · Widmo</div>
+  <h2>Widmo: z jakich częstotliwości składa się sygnał?</h2>
+  <div class="cols">
+    <div class="card"><div class="emo">🌈</div><h3>Pryzmat</h3><p>Białe światło przez pryzmat rozkłada się na kolory. Każdy kolor = inna częstotliwość.</p><p class="muted">Widmo dźwięku działa tak samo: pokazuje, jakie „tony" siedzą w dźwięku i jak są silne.</p></div>
+    <div class="card"><div class="emo">🎹</div><h3>Akord na pianinie</h3><p>Słyszymy jeden dźwięk, a to kilka częstotliwości naraz. Widmo pokazuje każdą z nich osobno.</p><p class="muted">Paski „equalizera" w odtwarzaczu muzyki to też uproszczone widmo.</p></div>
+  </div>
+  <div class="cols">
+    <p><b>Oscylogram</b> (dotąd): oś pozioma = <b>czas</b> → <i>jak sygnał zmienia się w czasie</i></p>
+    <p><b>Widmo</b>: oś pozioma = <b>częstotliwość</b> → <i>ile jest w sygnale każdej częstotliwości</i></p>
+  </div>
+  <aside class="notes">
+    <p>To ten sam sygnał oglądany „z dwóch stron". Oscylogram odpowiada na pytanie „co się dzieje w czasie", widmo — „z czego to się składa".</p>
+    <p>Pojęcie, które pojawi się przy mediach transmisyjnych: <b>pasmo</b> = zakres częstotliwości, jaki zajmuje sygnał lub jaki przepuszcza kabel/kanał.</p>
+  </aside>
+</section>
+
+<!-- ================= 19. KSZTAŁT FALI I WIDMO – PLAC ZABAW ================= -->
+<section class="slide" id="s-shapes">
+  <div class="kicker">Część 4 · Widmo</div>
+  <h2>Kształt fali ↔ widmo <span class="muted">(oscyloskop + analizator)</span></h2>
+  <div class="ctrl">
+    <button class="primary" id="sh-play">▶ Odtwórz</button>
+    <select id="sh-type">
+      <option value="sine">sinusoida</option><option value="triangle">trójkąt</option>
+      <option value="square">prostokąt</option><option value="sawtooth">piła</option>
+    </select>
+    <label>Częstotliwość <input type="range" id="sh-f" min="0" max="1000" value="400"> <span class="val" id="sh-fv"></span></label>
+    <button id="sh-mic">🎤 mikrofon</button><span class="msg" id="sh-msg"></span>
+  </div>
+  <div class="cols">
+    <div><p class="info">Oscylogram (czas, ok. 10 ms)</p><canvas class="viz" id="cv-scope" style="height:40vh"></canvas></div>
+    <div><p class="info">Widmo (częstotliwość 0–5 kHz)</p><canvas class="viz" id="cv-spec" style="height:40vh"></canvas></div>
+  </div>
+  <aside class="notes">
+    <p><b>Kolejność pokazu:</b> sinusoida → w widmie <b>jeden prążek</b>. Trójkąt → kilka słabych prążków. Prostokąt i piła → wiele prążków w równych odstępach (to <b>harmoniczne</b>: 2×, 3×, 4× częstotliwość podstawowa). Brzmią „ostrzej" — bo mają więcej wysokich składowych.</p>
+    <p>Prostokąt to przecież „sygnał cyfrowy" (0/1) — widzimy, że zajmuje <b>szerokie pasmo</b>. To ważne: im szybciej przesyłamy bity, tym szersze pasmo musi mieć kabel.</p>
+    <p><b>Mikrofon:</b> poproś kogoś, żeby zagwizdał — gwizd jest prawie czystą sinusoidą (jeden prążek!). Potem „aaaa" głosem — wiele prążków (harmonicznych). Jeśli mikrofon nie działa: przeglądarka musi mieć pozwolenie (ikonka kłódki/kamery przy pasku adresu).</p>
+  </aside>
+</section>
+
+<!-- ================= 20. FOURIER ================= -->
+<section class="slide" id="s-fourier">
+  <div class="kicker">Część 4 · Widmo</div>
+  <h2>Prostokąt zbudowany z sinusoid</h2>
+  <div class="ctrl">
+    <button class="primary" id="fo-play">▶ Odtwórz</button>
+    <select id="fo-kind"><option value="sq">cel: prostokąt</option><option value="saw">cel: piła</option></select>
+    <label>Liczba składowych <input type="range" id="fo-n" min="1" max="15" value="1"> <span class="val" id="fo-nv"></span></label>
+  </div>
+  <div class="cols c64">
+    <div><p class="info">Suma (gruba linia) i składowe (cienkie)</p><canvas class="viz" id="cv-fo" style="height:44vh"></canvas></div>
+    <div><p class="info">Widmo: amplitudy składowych</p><canvas class="viz" id="cv-fob" style="height:44vh"></canvas></div>
+  </div>
+  <p>Każdy sygnał okresowy można złożyć z sinusoid o częstotliwościach f, 2f, 3f… (<b>szereg Fouriera</b>).</p>
+  <aside class="notes">
+    <p>Zacznij od 1 składowej: czysta sinusoida. Dodawaj po jednej — fala coraz bardziej przypomina prostokąt, a dźwięk staje się coraz „ostrzejszy". Prostokąt potrzebuje tylko <b>nieparzystych</b> harmonicznych (f, 3f, 5f…) o malejących amplitudach (1, 1/3, 1/5…).</p>
+    <p><b>Wniosek dla telekomunikacji:</b> jeśli kabel „obetnie" wysokie częstotliwości (ograniczone pasmo), to z prostokąta zostanie zaokrąglona fala — przy zbyt szybkiej transmisji bity zaczynają się zlewać.</p>
+    <p>Nazwisko Fourier warto wymienić, wzoru nie trzeba.</p>
+  </aside>
+</section>
+
+<!-- ================= 21. SPEKTROGRAM ================= -->
+<section class="slide" id="s-sg">
+  <div class="kicker">Część 4 · Spektrogram</div>
+  <h2>Spektrogram — widmo w czasie</h2>
+  <div class="ctrl">
+    <button class="primary" id="sg-mic">🎤 mikrofon</button>
+    <button id="sg-sweep">↗ przemiatanie 100 Hz → 8 kHz</button>
+    <button id="sg-chord">🎹 akord</button>
+    <button id="sg-sq">▭ prostokąt 440 Hz</button>
+    <button id="sg-stop">■ cisza</button>
+    <label>zakres <select id="sg-fmax"><option value="4000">0–4 kHz</option><option value="8000" selected>0–8 kHz</option><option value="16000">0–16 kHz</option></select></label>
+    <span class="msg" id="sg-msg"></span>
+  </div>
+  <canvas class="viz dark" id="cv-sg" style="height:50vh"></canvas>
+  <p class="info">oś pozioma: <b>czas</b> (płynie w lewo) · oś pionowa: <b>częstotliwość</b> · kolor: <b>siła</b> danej częstotliwości (ciemny = brak, żółty = dużo)</p>
+  <aside class="notes">
+    <p>Spektrogram to „film" z widm — każda pionowa kreska to jedno widmo w danej chwili. To dokładnie to, co pokazują Audacity (widok „Spektrogram") czy foobar2000.</p>
+    <p><b>Pokaz:</b> (1) przemiatanie — ukośna linia: jedna częstotliwość rośnie w czasie. (2) akord — trzy poziome linie. (3) prostokąt — wiele równoległych linii (harmoniczne). (4) mikrofon: gwizd (jedna cienka, falująca linia), samogłoska „aaa" (drabinka harmonicznych), „sss"/„szszsz" (szeroka chmura wysoko — szum), klaśnięcie (pionowa kreska — wszystkie częstotliwości naraz, krótko).</p>
+    <p>Zabawa: niech dwie osoby powiedzą to samo słowo — spektrogramy się różnią (na tej zasadzie działa rozpoznawanie mowy).</p>
+  </aside>
+</section>
+
+<!-- ================= 22. DTMF ================= -->
+<section class="slide" id="s-dtmf">
+  <div class="kicker">Część 4 · Przykład z telekomunikacji</div>
+  <h2>Telefon „mówi" częstotliwościami — DTMF</h2>
+  <div class="cols c64">
+    <div>
+      <p class="info">Widmo na żywo (0–2 kHz). Przytrzymaj klawisz:</p>
+      <canvas class="viz" id="cv-dtmf" style="height:44vh"></canvas>
+      <div class="ctrl" style="margin-top:1vh">
+        <label>numer <input type="text" id="dt-num" value="600123456" style="font:inherit;width:12ch;padding:.2em .4em;border-radius:8px;border:1px solid var(--grid);background:var(--panel);color:var(--fg)"></label>
+        <button id="dt-dial">☎ wybierz</button>
+      </div>
+    </div>
+    <div>
+      <div class="pads" id="dt-pads"></div>
+      <table style="margin-top:1.5vh" id="dt-table"></table>
+    </div>
+  </div>
+  <aside class="notes">
+    <p>Każdy klawisz telefonu to <b>dwie sinusoidy naraz</b>: jedna z „wiersza" (697–941 Hz), druga z „kolumny" (1209–1633 Hz). Centrala analizuje widmo i rozpoznaje klawisz po parze prążków. Do dziś tak działa nawigacja infolinii („wciśnij 1, aby…").</p>
+    <p>Przytrzymaj klawisz — w widmie pojawiają się dokładnie dwa prążki, a w tabeli podświetla się wiersz i kolumna. Wpisz numer i kliknij „wybierz" — usłyszysz znajome dźwięki wybierania.</p>
+    <p>Dobry przykład, że <b>informację (cyfrę) przesyłamy sygnałem analogowym</b> (sinusoidami) — granica „analog/cyfra" nie jest taka ostra.</p>
+  </aside>
+</section>
+
+<!-- ================= 23. PODSUMOWANIE ================= -->
+<section class="slide" id="s-summary">
+  <div class="kicker">Podsumowanie</div>
+  <h2>Ściąga</h2>
+  <table>
+    <tr><th>Parametr</th><th>Symbol · jednostka</th><th>Co mówi</th><th>Słyszymy jako…</th></tr>
+    <tr><td><b>Amplituda</b></td><td>A · V, Pa</td><td>jak duże jest wychylenie</td><td>głośność</td></tr>
+    <tr><td><b>Okres</b></td><td>T · s, ms</td><td>ile trwa jeden cykl</td><td>krótki okres = wysoki dźwięk</td></tr>
+    <tr><td><b>Częstotliwość</b></td><td>f · Hz &nbsp;(f = 1/T)</td><td>ile cykli na sekundę</td><td>wysokość dźwięku</td></tr>
+    <tr><td><b>Faza</b></td><td>φ · °, rad</td><td>przesunięcie startu cyklu</td><td>sama — nie; dwie fale: wzmocnienie / wygaszenie</td></tr>
+  </table>
+  <div class="cols" style="margin-top:1vh">
+    <div class="card"><h3 style="color:var(--accent2)">Analogowy</h3><p>ciągły w czasie i wartości · naturalny · szum kumuluje się</p></div>
+    <div class="card"><h3 style="color:var(--accent3)">Cyfrowy</h3><p>próbkowanie + kwantyzacja → bity · regeneracja · kopia bez strat · szersze pasmo</p></div>
+  </div>
+  <aside class="notes"><p>Dobry moment na pytania. Tę tabelę studenci mogą sfotografować.</p></aside>
+</section>
+
+<!-- ================= 24. QUIZ ================= -->
+<section class="slide" id="s-quiz">
+  <div class="kicker">Sprawdź się</div>
+  <h2>Szybki quiz <span class="muted">(kliknij, by zobaczyć odpowiedź)</span></h2>
+  <div class="cols">
+    <div>
+      <details><summary>1. Okres sygnału wynosi 20 ms. Jaka jest częstotliwość?</summary><p>f = 1/0,02 s = 50 Hz (jak w gniazdku)</p></details>
+      <details><summary>2. Sygnał ma 1 kHz. Ile trwa jeden okres?</summary><p>T = 1/1000 s = 1 ms</p></details>
+      <details><summary>3. Zwiększam amplitudę dźwięku. Co się zmieni?</summary><p>Głośność — wysokość dźwięku zostaje ta sama</p></details>
+      <details><summary>4. Ile poziomów daje kwantyzacja 3-bitowa?</summary><p>2³ = 8 poziomów</p></details>
+    </div>
+    <div>
+      <details><summary>5. Dwie identyczne fale przesunięte o 180°. Co słychać?</summary><p>Ciszę — fale się wygaszają (zasada słuchawek z ANC)</p></details>
+      <details><summary>6. Termometr rtęciowy — analogowy czy cyfrowy?</summary><p>Analogowy — słupek może mieć dowolną wysokość</p></details>
+      <details><summary>7. Dlaczego cyfrowa kopia nie traci jakości?</summary><p>Bo odbiornik rozróżnia tylko 0 i 1 i odtwarza (regeneruje) czysty sygnał</p></details>
+      <details><summary>8. Jak wygląda gwizd na spektrogramie?</summary><p>Jedna cienka linia — to prawie czysta sinusoida</p></details>
+    </div>
+  </div>
+  <aside class="notes"><p>Można zadawać pytania sali i odsłaniać odpowiedzi po kolei. Pytania 1, 2, 4, 5 nadają się na kolokwium.</p></aside>
+</section>
+
+<!-- ================= 25. NARZĘDZIA ================= -->
+<section class="slide" id="s-tools">
+  <div class="kicker">Do samodzielnej pracy</div>
+  <h2>Pobaw się sam(a)</h2>
+  <div class="cols">
+    <div class="card"><h3>🎛️ Audacity <span class="tag">bezpłatny</span></h3>
+      <p>Generuj → Ton (sinus, prostokąt, piła; częstotliwość, amplituda)</p>
+      <p>Analiza → Wykreśl widmo · menu ścieżki → Spektrogram</p></div>
+    <div class="card"><h3>📱 phyphox <span class="tag">aplikacja, bezpłatna</span></h3>
+      <p>Telefon jako oscyloskop, analizator widma i generator tonu (Android / iOS)</p></div>
+    <div class="card"><h3>🌐 Chrome Music Lab — Spectrogram</h3>
+      <p>Spektrogram z mikrofonu w przeglądarce, bez instalacji</p></div>
+    <div class="card"><h3>🌐 PhET — „Fourier: Making Waves"</h3>
+      <p>Składanie fal z harmonicznych, symulacja interaktywna (phet.colorado.edu)</p></div>
+  </div>
+  <aside class="notes">
+    <p>Zachęć do zainstalowania <b>phyphox</b> na telefonie jeszcze na sali — od razu mogą „zmierzyć" gwizd kolegi albo tony DTMF z drugiego telefonu.</p>
+  </aside>
+</section>
+
+<div id="notes"></div>
+<div id="bar">
+  <button id="b-prev" title="poprzedni">◀</button>
+  <button id="b-next" title="następny">▶</button>
+  <div id="prog"><div></div></div>
+  <span id="cnt"></span>
+  <span title="głośność">🔊</span><input type="range" id="vol" min="0" max="100" value="50">
+  <button id="b-notes" title="notatki (N)">📝</button>
+  <button id="b-spk" title="okno prowadzącej (S)">🗔</button>
+  <button id="b-theme" title="motyw (T)">◐</button>
+  <button id="b-fs" title="pełny ekran (F)">⛶</button>
+</div>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const TAU=Math.PI*2;
+const fmtHz=f=>f>=1000?(f/1000).toFixed(f>=10000?1:2).replace('.',',')+' kHz':Math.round(f)+' Hz';
+const pl=(x,d)=>x.toFixed(d).replace('.',',');
+
+/* ---------------- motyw ---------------- */
+try{const t=localStorage.getItem('sygn-theme'); if(t) document.documentElement.dataset.theme=t;}catch(e){}
+function toggleTheme(){const r=document.documentElement; r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';
+  try{localStorage.setItem('sygn-theme',r.dataset.theme)}catch(e){}}
+let C={};
+function readColors(){const s=getComputedStyle(document.documentElement);
+  for(const k of ['bg','panel','fg','muted','grid','accent','accent2','accent3','danger','violet']) C[k]=s.getPropertyValue('--'+k).trim();}
+
+/* ---------------- audio ---------------- */
+const AE={
+  ctx:null, voices:new Set(), mic:null, micStream:null,
+  init(){
+    if(this.ctx){ if(this.ctx.state==='suspended') this.ctx.resume(); return this.ctx; }
+    const ctx=this.ctx=new (window.AudioContext||window.webkitAudioContext)();
+    this.bus=ctx.createGain();
+    this.an=ctx.createAnalyser(); this.an.fftSize=8192; this.an.smoothingTimeConstant=0.55;
+    this.master=ctx.createGain(); this.setVol(+$('#vol').value);
+    this.bus.connect(this.an); this.bus.connect(this.master); this.master.connect(ctx.destination);
+    const z=ctx.createGain(); z.gain.value=0; this.an.connect(z); z.connect(ctx.destination);
+    this.fd=new Float32Array(this.an.frequencyBinCount);
+    this.fb=new Uint8Array(this.an.frequencyBinCount);
+    this.td=new Float32Array(this.an.fftSize);
+    return ctx;
+  },
+  setVol(v){ if(this.master) this.master.gain.setTargetAtTime((v/100)**2,this.ctx.currentTime,0.03); },
+  tone(o={}){
+    const ctx=this.init(), osc=ctx.createOscillator(), g=ctx.createGain();
+    if(o.wave) osc.setPeriodicWave(o.wave); else osc.type=o.type||'sine';
+    osc.frequency.value=o.f||440; g.gain.value=0; osc.connect(g); g.connect(this.bus); osc.start();
+    g.gain.setTargetAtTime(o.a??0.4, ctx.currentTime, 0.015);
+    const v={osc,g,
+      set(p){const t=ctx.currentTime;
+        if(p.f!=null) osc.frequency.setTargetAtTime(p.f,t,0.015);
+        if(p.a!=null) g.gain.setTargetAtTime(p.a,t,0.02);
+        if(p.type) osc.type=p.type; if(p.wave) osc.setPeriodicWave(p.wave);},
+      stop(){const t=ctx.currentTime; g.gain.cancelScheduledValues(t); g.gain.setTargetAtTime(0,t,0.02);
+        try{osc.stop(t+0.2)}catch(e){} AE.voices.delete(v);}};
+    this.voices.add(v); return v;
+  },
+  beep(f1,f2,t0,dur,a=0.3){ // zaplanowany ton (lub dwa) bez zapisu w voices
+    const ctx=this.init(), g=ctx.createGain(); g.gain.value=0; g.connect(this.bus);
+    for(const f of [f1,f2]){ if(!f) continue; const o=ctx.createOscillator(); o.frequency.value=f; o.connect(g); o.start(t0); o.stop(t0+dur+0.05); }
+    g.gain.setValueAtTime(0,t0); g.gain.linearRampToValueAtTime(a,t0+0.01);
+    g.gain.setValueAtTime(a,t0+dur-0.015); g.gain.linearRampToValueAtTime(0,t0+dur);
+  },
+  stopVoices(){ for(const v of [...this.voices]) v.stop(); },
+  async micOn(){
+    this.init(); if(this.mic) return true;
+    try{
+      const s=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+      this.micStream=s; this.mic=this.ctx.createMediaStreamSource(s); this.mic.connect(this.an); return true;
+    }catch(e){ return false; }
+  },
+  micOff(){ if(this.mic){ this.mic.disconnect(); this.micStream.getTracks().forEach(t=>t.stop()); this.mic=null; } },
+  stopAll(){ this.stopVoices(); this.micOff(); }
+};
+$('#vol').addEventListener('input',e=>AE.setVol(+e.target.value));
+
+const resetters=[];
+function toggle(btn,onStart,onStop,labels){
+  labels=labels||[btn.textContent,'■ Stop']; let on=false;
+  const set=v=>{on=v; btn.textContent=labels[v?1:0]; btn.classList.toggle('on',v);};
+  btn.addEventListener('click',async()=>{ if(!on){ const ok=await onStart(); if(ok===false) return; set(true);} else { onStop(); set(false);} });
+  resetters.push(()=>{ if(on) set(false); });
+  return {get on(){return on}};
+}
+
+/* ---------------- rysowanie ---------------- */
+function fit(c){
+  const r=c.getBoundingClientRect(), d=window.devicePixelRatio||1;
+  const w=Math.max(1,Math.round(r.width*d)), h=Math.max(1,Math.round(r.height*d));
+  if(c.width!==w||c.height!==h){c.width=w;c.height=h;}
+  const g=c.getContext('2d'); g.setTransform(d,0,0,d,0,0); g.clearRect(0,0,r.width,r.height);
+  return {g,w:r.width,h:r.height};
+}
+function box(g,x,y,w,h){ g.strokeStyle=C.grid; g.lineWidth=1; g.beginPath(); g.moveTo(x,y+h/2); g.lineTo(x+w,y+h/2); g.stroke(); }
+// rysuje fn(t) dla t∈[t0,t1]; wartość v∈[-ymax,ymax] mapowana na pas [y,y+h]
+function plot(g,x,y,w,h,fn,t0,t1,col,lw=2.5,dash=null,ymax=1){
+  g.beginPath(); const n=Math.ceil(w*2);
+  for(let i=0;i<=n;i++){const t=t0+(t1-t0)*i/n, py=y+h/2-fn(t)/ymax*h/2; i?g.lineTo(x+w*i/n,py):g.moveTo(x,py);}
+  g.strokeStyle=col; g.lineWidth=lw; g.setLineDash(dash||[]); g.stroke(); g.setLineDash([]);
+}
+function text(g,s,x,y,col,size=16,align='left',weight=600){ g.fillStyle=col; g.font=`${weight} ${size}px system-ui,-apple-system,Segoe UI,sans-serif`; g.textAlign=align; g.textBaseline='middle'; g.fillText(s,x,y); }
+function label(g,s,x,y,col,size=15,align='left'){ g.font=`600 ${size}px system-ui,-apple-system,Segoe UI,sans-serif`; const tw=g.measureText(s).width, x0=align==='right'?x-tw:align==='center'?x-tw/2:x; g.fillStyle=C.panel; g.globalAlpha=.9; g.fillRect(x0-6,y-size*0.75,tw+12,size*1.5); g.globalAlpha=1; text(g,s,x,y,col,size,align); }
+function dot(g,x,y,r,col){ g.beginPath(); g.arc(x,y,r,0,TAU); g.fillStyle=col; g.fill(); }
+function arrow(g,x1,y1,x2,y2,col,lw=2){ g.strokeStyle=col; g.fillStyle=col; g.lineWidth=lw; g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke();
+  const a=Math.atan2(y2-y1,x2-x1), s=10; g.beginPath(); g.moveTo(x2,y2); g.lineTo(x2-s*Math.cos(a-0.4),y2-s*Math.sin(a-0.4)); g.lineTo(x2-s*Math.cos(a+0.4),y2-s*Math.sin(a+0.4)); g.closePath(); g.fill(); }
+const quant=(v,L)=>{const k=Math.min(L-1,Math.max(0,Math.floor((v+1)/2*L))); return {k,v:-1+(k+0.5)*2/L};};
+// log-suwak 0..1000 -> f
+const logF=(v,a,b)=>a*Math.pow(b/a,v/1000);
+
+/* analizator: widmo */
+function drawSpectrum(c,fmax,marks){
+  const {g,w,h}=fit(c); const L=40,B=28, pw=w-L-10, ph=h-B-10;
+  // osie
+  const step=fmax<=2000?250:fmax<=5000?500:fmax<=8000?1000:2000;
+  for(let f=0;f<=fmax;f+=step){const x=L+pw*f/fmax; g.strokeStyle=C.grid; g.lineWidth=1; g.beginPath(); g.moveTo(x,10); g.lineTo(x,10+ph); g.stroke();
+    text(g,f>=1000?pl(f/1000,f%1000?1:0)+'k':String(f),x,h-B/2,C.muted,12,'center',500);}
+  text(g,'[Hz]',w-6,18,C.muted,12,'right',500);
+  if(marks) for(const m of marks){const x=L+pw*m.f/fmax; g.strokeStyle=m.on?C.accent2:C.grid; g.lineWidth=m.on?2:1; g.setLineDash([4,4]); g.beginPath(); g.moveTo(x,10); g.lineTo(x,10+ph); g.stroke(); g.setLineDash([]);}
+  if(!AE.ctx){ text(g,'(włącz dźwięk lub mikrofon)',L+pw/2,10+ph/2,C.muted,16,'center'); return; }
+  AE.an.getFloatFrequencyData(AE.fd);
+  const sr=AE.ctx.sampleRate, bw=sr/AE.an.fftSize, nb=Math.min(AE.fd.length,Math.floor(fmax/bw));
+  const lo=-110,hi=-15;
+  g.beginPath(); g.moveTo(L,10+ph);
+  for(let i=0;i<=nb;i++){const v=Math.max(lo,Math.min(hi,AE.fd[i])); const x=L+pw*(i*bw)/fmax, y=10+ph-(v-lo)/(hi-lo)*ph; g.lineTo(x,y);}
+  g.lineTo(L+pw,10+ph); g.closePath();
+  g.fillStyle=C.accent+'55'; g.fill(); g.strokeStyle=C.accent; g.lineWidth=1.6; g.stroke();
+}
+/* analizator: oscylogram z wyzwalaniem */
+function drawScope(c,ms,autoscale){
+  const {g,w,h}=fit(c); box(g,0,0,w,h);
+  for(let i=1;i<10;i++){g.strokeStyle=C.grid; g.globalAlpha=.4; g.beginPath(); g.moveTo(w*i/10,0); g.lineTo(w*i/10,h); g.stroke(); g.globalAlpha=1;}
+  if(!AE.ctx){ text(g,'(włącz dźwięk lub mikrofon)',w/2,h/2-20,C.muted,16,'center'); return; }
+  const td=AE.td; AE.an.getFloatTimeDomainData(td);
+  const n=Math.round(ms/1000*AE.ctx.sampleRate); let s=0;
+  for(let i=1;i<td.length-n;i++){ if(td[i-1]<0&&td[i]>=0){s=i;break;} }
+  let sc=1.8;
+  if(autoscale){let m=0; for(let i=s;i<s+n;i++) m=Math.max(m,Math.abs(td[i])); sc=0.9/Math.max(m,0.02);}
+  g.beginPath(); for(let i=0;i<n;i++){const x=w*i/(n-1), y=h/2-td[s+i]*sc*h/2; i?g.lineTo(x,y):g.moveTo(x,y);}
+  g.strokeStyle=C.accent2; g.lineWidth=2.5; g.stroke();
+}
+
+/* ---------------- rejestr klatek ---------------- */
+const frame={};
+
+/* ===== pochylnia vs schody ===== */
+frame['s-ramp']=t=>{
+  const {g,w,h}=fit($('#cv-ramp'));
+  const p=(1-Math.cos(t*0.7))/2, half=w/2, pad=Math.max(30,w*0.05), base=h-70, top=60, H=2.0, N=5;
+  // lewa: pochylnia
+  let x0=pad, x1=half-pad;
+  g.beginPath(); g.moveTo(x0,base); g.lineTo(x1,top); g.lineTo(x1,base); g.closePath();
+  g.fillStyle=C.accent2+'22'; g.fill(); g.strokeStyle=C.accent2; g.lineWidth=3; g.stroke();
+  const ang=Math.atan2(base-top,x1-x0), r=14;
+  const bx=x0+(x1-x0)*p, by=base-(base-top)*p;
+  dot(g,bx+r*Math.sin(ang)*-1+0,by-r*Math.cos(ang),r,C.accent2);
+  text(g,'ANALOGOWY — pochylnia',(x0+x1)/2,24,C.accent2,20,'center',700);
+  text(g,'wysokość: '+pl(p*H,4)+' m',(x0+x1)/2,base+36,C.fg,22,'center',700);
+  // prawa: schody
+  x0=half+pad; x1=w-pad; const sw=(x1-x0)/(N+1);
+  g.beginPath(); g.moveTo(x0,base);
+  for(let k=0;k<=N;k++){const y=base-(base-top)*k/N; g.lineTo(x0+k*sw,y); g.lineTo(x0+(k+1)*sw,y);}
+  g.lineTo(x1,base); g.closePath(); g.fillStyle=C.accent3+'22'; g.fill(); g.strokeStyle=C.accent3; g.lineWidth=3; g.stroke();
+  const k=Math.round(p*N), sy=base-(base-top)*k/N;
+  dot(g,x0+(k+0.5)*sw,sy-r-1,r,C.accent3);
+  for(let j=0;j<=N;j++) text(g,String(j),x0+(j+0.5)*sw,base-(base-top)*j/N+14,C.muted,13,'center',600);
+  text(g,'CYFROWY — schody',(x0+x1)/2,24,C.accent3,20,'center',700);
+  text(g,'stopień: '+k+'   (binarnie '+k.toString(2).padStart(3,'0')+')',(x0+x1)/2,base+36,C.fg,22,'center',700);
+};
+
+/* ===== siatka 2x2 ===== */
+const sigG=t=>0.55*Math.sin(TAU*0.9*t)+0.35*Math.sin(TAU*2.1*t+1);
+function gridPanel(id,mode){
+  const {g,w,h}=fit($(id)); const L=8, pad=10, y=pad, ph=h-2*pad, x=pad, pw=w-2*pad, NS=22, T=2;
+  box(g,x,y,pw,ph);
+  if(mode>=3){ g.strokeStyle=C.grid; g.setLineDash([3,4]); for(let k=0;k<L;k++){const v=-1+(k+0.5)*2/L, yy=y+ph/2-v/1.05*ph/2; g.beginPath(); g.moveTo(x,yy); g.lineTo(x+pw,yy); g.stroke();} g.setLineDash([]); }
+  if(mode===1) plot(g,x,y,pw,ph,sigG,0,T,C.accent2,3,null,1.05);
+  if(mode===3) plot(g,x,y,pw,ph,t=>quant(sigG(t),L).v,0,T,C.violet,3,null,1.05);
+  if(mode===2||mode===4){
+    plot(g,x,y,pw,ph,sigG,0,T,C.grid,1.5,[4,4],1.05);
+    for(let i=0;i<NS;i++){const t=(i+0.5)*T/NS, v=mode===2?sigG(t):quant(sigG(t),L).v, xx=x+pw*t/T, yy=y+ph/2-v/1.05*ph/2;
+      g.strokeStyle=mode===2?C.accent:C.accent3; g.lineWidth=2; g.beginPath(); g.moveTo(xx,y+ph/2); g.lineTo(xx,yy); g.stroke(); dot(g,xx,yy,4.5,mode===2?C.accent:C.accent3);}
+  }
+}
+frame['s-grid']=()=>{gridPanel('#cv-g1',1);gridPanel('#cv-g2',2);gridPanel('#cv-g3',3);gridPanel('#cv-g4',4);};
+
+/* ===== próbkowanie i kwantyzacja ===== */
+const sigA=t=>0.68*Math.sin(TAU*t)+0.26*Math.sin(TAU*3*t+0.6);
+function adcInfo(){
+  const N=+$('#adc-n').value, b=+$('#adc-b').value, L=2**b;
+  $('#adc-nv').textContent=N; $('#adc-bv').textContent=b+' b';
+  $('#adc-info').innerHTML=`poziomów: 2<sup>${b}</sup> = <b>${L}</b> · próbek: <b>${N}</b> · do przesłania: ${N} × ${b} = <b>${N*b} bitów</b>`;
+  const codes=[]; for(let i=0;i<Math.min(N,16);i++) codes.push(quant(sigA((i+0.5)/N),L).k.toString(2).padStart(b,'0'));
+  $('#adc-bits').textContent='bity: '+codes.join(' ')+(N>16?' …':'');
+}
+['#adc-n','#adc-b'].forEach(s=>$(s).addEventListener('input',adcInfo)); adcInfo();
+frame['s-adc']=()=>{
+  const {g,w,h}=fit($('#cv-adc')); const N=+$('#adc-n').value, b=+$('#adc-b').value, L=2**b, pad=12, x=pad, y=pad, pw=w-2*pad, ph=h-2*pad, ym=1.05;
+  if(L<=32){g.strokeStyle=C.grid; g.setLineDash([3,5]); g.lineWidth=1; for(let k=0;k<L;k++){const yy=y+ph/2-(-1+(k+0.5)*2/L)/ym*ph/2; g.beginPath(); g.moveTo(x,yy); g.lineTo(x+pw,yy); g.stroke();} g.setLineDash([]);}
+  box(g,x,y,pw,ph);
+  plot(g,x,y,pw,ph,sigA,0,1,C.muted,2,null,ym);
+  // schodki (odtworzenie)
+  g.beginPath();
+  for(let i=0;i<N;i++){const v=quant(sigA((i+0.5)/N),L).v, yy=y+ph/2-v/ym*ph/2, xa=x+pw*i/N, xb=x+pw*(i+1)/N; i?g.lineTo(xa,yy):g.moveTo(xa,yy); g.lineTo(xb,yy);}
+  g.strokeStyle=C.accent2; g.lineWidth=3.5; g.stroke();
+  for(let i=0;i<N;i++){const t=(i+0.5)/N, v=quant(sigA(t),L).v; dot(g,x+pw*t,y+ph/2-v/ym*ph/2,Math.max(3,6-N/16),C.accent);}
+  label(g,'szary: oryginał (analogowy) · niebieskie kropki: próbki · pomarańczowy: wersja cyfrowa',x+8,y+16,C.muted,14);
+};
+
+/* ===== aliasing ===== */
+const FS=10;
+function alInfo(){const f=+$('#al-f').value/2; $('#al-fv').textContent=pl(f,1)+' Hz';
+  const per=FS/f, fa=Math.abs(f-Math.round(f/FS)*FS);
+  $('#al-info').innerHTML=`próbek na jeden okres: <b>${pl(per,1)}</b> · `+(f<FS/2?'<span style="color:var(--accent3)">✔ wystarczająco gęsto</span>':
+    f===FS/2?'<span style="color:var(--accent2)">⚠ dokładnie na granicy (2 próbki na okres)</span>':
+    `<span style="color:var(--danger)">✘ za rzadko! próbki „udają" falę ${pl(fa,1)} Hz, której nie było</span>`);}
+$('#al-f').addEventListener('input',alInfo); alInfo();
+frame['s-alias']=()=>{
+  const {g,w,h}=fit($('#cv-alias')); const f=+$('#al-f').value/2, pad=12, x=pad, y=pad, pw=w-2*pad, ph=h-2*pad, T=1, ph0=0.5;
+  box(g,x,y,pw,ph);
+  for(let i=0;i<=FS*T;i++){g.strokeStyle=C.grid; g.globalAlpha=.5; const xx=x+pw*i/(FS*T); g.beginPath(); g.moveTo(xx,y); g.lineTo(xx,y+ph); g.stroke(); g.globalAlpha=1;}
+  plot(g,x,y,pw,ph,t=>Math.sin(TAU*f*t+ph0),0,T,C.accent,2,null,1.1);
+  const fs=f-Math.round(f/FS)*FS;
+  if(f>FS/2) plot(g,x,y,pw,ph,t=>Math.sin(TAU*fs*t+ph0),0,T,C.danger,3.5,[10,6],1.1);
+  for(let i=0;i<=FS*T;i++){const t=i/FS; dot(g,x+pw*t/T,y+ph/2-Math.sin(TAU*f*t+ph0)/1.1*ph/2,7,C.accent2);}
+  label(g,'niebieski: prawdziwy sygnał · pomarańczowe: próbki'+(f>FS/2?' · czerwony: co „widzą" próbki':''),x+8,y+16,C.muted,14);
+};
+
+/* ===== szum: analog vs cyfra ===== */
+const NZ={bits:[1,0,1,1,0,0,1,1,1,0,0,0,1,0,1,1],SPB:24,seed:7};
+function rng(seed){let a=seed>>>0; return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function simNoise(){
+  const s=+$('#nz-s').value/100, M=+$('#nz-m').value, R=rng(NZ.seed), n=NZ.bits.length*NZ.SPB;
+  const gauss=()=>{let u=0,v=0;while(!u)u=R();while(!v)v=R();return Math.sqrt(-2*Math.log(u))*Math.cos(TAU*v);};
+  const a0=[],a=[],cur=[]; for(let i=0;i<n;i++){const t=i/n; a0[i]=0.5+0.3*Math.sin(TAU*2*t)+0.12*Math.sin(TAU*5*t+1); a[i]=a0[i]; cur[i]=NZ.bits[Math.floor(i/NZ.SPB)];}
+  let rx=[], dec=NZ.bits.slice(), d=cur.slice();
+  for(let m=0;m<M;m++){
+    for(let i=0;i<n;i++) a[i]+=gauss()*s*0.45;
+    rx=d.map(v=>v+gauss()*s);
+    dec=NZ.bits.map((_,k)=>rx[k*NZ.SPB+NZ.SPB/2]>0.5?1:0);
+    d=[]; for(let i=0;i<n;i++) d[i]=dec[Math.floor(i/NZ.SPB)];
+  }
+  Object.assign(NZ,{a0,a,rx,dec,d,n});
+  const err=dec.reduce((e,b,k)=>e+(b!==NZ.bits[k]),0);
+  $('#nz-sv').textContent=pl(s,2); $('#nz-mv').textContent=M;
+  $('#nz-info').innerHTML=`błędne bity po ${M} odcinkach: <b style="color:${err?'var(--danger)':'var(--accent3)'}">${err} z ${NZ.bits.length}</b>`;
+}
+['#nz-s','#nz-m'].forEach(s=>$(s).addEventListener('input',simNoise));
+$('#nz-new').addEventListener('click',()=>{NZ.seed=Math.floor(Math.random()*1e9);simNoise();}); simNoise();
+frame['s-noise']=()=>{
+  const {g,w,h}=fit($('#cv-noise')); const L=Math.min(300,w*0.27), pw=w-L-14, rows=4, rh=h/rows;
+  const labels=[['Analog — nadany',C.accent2],['Analog — odebrany',C.accent2],['Cyfra — odebrana (z szumem)',C.accent3],['Cyfra — po regeneracji',C.accent3]];
+  const series=[NZ.a0,NZ.a,NZ.rx,NZ.d];
+  for(let r=0;r<rows;r++){
+    const y0=r*rh+6, hh=rh-12, map=v=>y0+hh-(v+0.25)/1.5*hh;
+    g.strokeStyle=C.grid; g.lineWidth=1; g.strokeRect(L,y0,pw,hh);
+    text(g,labels[r][0],10,y0+hh/2,labels[r][1],Math.min(16,L/17),'left',700);
+    if(r>=2){g.setLineDash([4,4]); g.strokeStyle=C.muted; g.beginPath(); g.moveTo(L,map(0.5)); g.lineTo(L+pw,map(0.5)); g.stroke(); g.setLineDash([]);}
+    const s=series[r]; g.beginPath(); for(let i=0;i<NZ.n;i++){const x=L+pw*i/(NZ.n-1), y=Math.max(y0,Math.min(y0+hh,map(s[i]))); i?g.lineTo(x,y):g.moveTo(x,y);}
+    g.strokeStyle=r<2?C.accent2:C.accent3; g.lineWidth=r===3?3:2; g.stroke();
+    if(r===3) NZ.dec.forEach((b,k)=>{const bad=b!==NZ.bits[k]; text(g,String(b),L+pw*(k+0.5)/NZ.bits.length,y0+12,bad?C.danger:C.fg,15,'center',800);
+      if(bad){g.fillStyle=C.danger+'33'; g.fillRect(L+pw*k/NZ.bits.length,y0,pw/NZ.bits.length,hh);}});
+  }
+};
+
+/* ===== sinusoida z opisem ===== */
+frame['s-sine']=()=>{
+  const {g,w,h}=fit($('#cv-sine')); const pad=40, x=pad, y=40, pw=w-pad-20, ph=h-90, P=2.25, ym=1.25;
+  box(g,x,y,pw,ph); arrow(g,x,y+ph/2,x+pw+10,y+ph/2,C.muted,1.5); text(g,'t',x+pw+12,y+ph/2-14,C.muted,16);
+  plot(g,x,y,pw,ph,t=>Math.sin(TAU*t),0,P,C.accent,3.5,null,ym);
+  const xp=x+pw*0.25/P, yA=y+ph/2-ph/2/ym;
+  arrow(g,xp,y+ph/2,xp,yA+2,C.accent2,3); text(g,'A',xp+12,(y+ph/2+yA)/2,C.accent2,22,'left',800);
+  const x2=x+pw*1.25/P, yb=yA-16;
+  g.strokeStyle=C.accent3; g.lineWidth=2; g.setLineDash([4,4]); for(const xx of [xp,x2]){g.beginPath(); g.moveTo(xx,yA); g.lineTo(xx,yb-8); g.stroke();} g.setLineDash([]);
+  arrow(g,(xp+x2)/2,yb,x2,yb,C.accent3,2); arrow(g,(xp+x2)/2,yb,xp,yb,C.accent3,2);
+  text(g,'T — okres',(xp+x2)/2,yb-14,C.accent3,18,'center',800);
+  const yN=y+ph/2+ph/2/ym; text(g,'−A',x-8,yN,C.accent2,16,'right',700); text(g,'A',x-8,yA,C.accent2,16,'right',700); text(g,'0',x-8,y+ph/2,C.muted,14,'right');
+  text(g,'jeden cykl = jedno pełne „wahnięcie"',x+pw/2,h-20,C.muted,15,'center',500);
+};
+
+/* ===== amplituda ===== */
+let ampV=null; const AMP_F=330;
+const ampA=()=>+$('#amp-a').value/100;
+const ampT=toggle($('#amp-play'),()=>{ampV=AE.tone({f:AMP_F,a:0.6*ampA()});},()=>{ampV&&ampV.stop();});
+$('#amp-a').addEventListener('input',()=>{ $('#amp-av').textContent=pl(ampA(),2); if(ampT.on&&ampV) ampV.set({a:0.6*ampA()}); });
+$('#amp-av').textContent=pl(ampA(),2);
+frame['s-amp']=t=>{
+  const {g,w,h}=fit($('#cv-amp')); const pad=10, run=ampT.on?t*0.6:0;
+  box(g,pad,pad,w-2*pad,h-2*pad);
+  plot(g,pad,pad,w-2*pad,h-2*pad,u=>Math.sin(TAU*(u-run)),0,4,C.grid,2,[6,6],1.1);
+  plot(g,pad,pad,w-2*pad,h-2*pad,u=>ampA()*Math.sin(TAU*(u-run)),0,4,C.accent2,4,null,1.1);
+  text(g,'A = '+pl(ampA(),2),w-24,30,C.accent2,22,'right',800);
+};
+
+/* ===== częstotliwość ===== */
+let frV=null; let frF=()=>logF(+$('#fr-f').value,50,5000);
+const frT=toggle($('#fr-play'),()=>{frV=AE.tone({f:frF(),a:0.4});},()=>{frV&&frV.stop();});
+function frInfo(){const f=frF(); $('#fr-fv').textContent=fmtHz(f); const T=1000/f;
+  $('#fr-tv').innerHTML='okres T = 1/f = <b>'+(T>=1?pl(T,T>=10?1:2):pl(T,3))+' ms</b>'; if(frT.on&&frV) frV.set({f});}
+$('#fr-f').addEventListener('input',frInfo);
+$$('#s-freq [data-f]').forEach(b=>b.addEventListener('click',()=>{const f=+b.dataset.f; $('#fr-f').value=Math.round(1000*Math.log(f/50)/Math.log(100)); frInfo();}));
+frInfo();
+frame['s-freq']=()=>{
+  const {g,w,h}=fit($('#cv-freq')); const f=frF(), pad=10, win=0.02;
+  box(g,pad,pad,w-2*pad,h-2*pad);
+  plot(g,pad,pad,w-2*pad,h-2*pad,u=>Math.sin(TAU*f*u),0,win,C.accent,f>1500?1.5:3,null,1.1);
+  label(g,'okno: 20 ms  ·  mieści się '+pl(f*win,1)+' okresów',w-20,24,C.muted,15,'right');
+  if(f*win<=6){ const xT=pad+(w-2*pad)*(1/f)/win, yy=h-28; arrow(g,(pad+xT)/2,yy,xT,yy,C.accent3); arrow(g,(pad+xT)/2,yy,pad,yy,C.accent3); text(g,'T',(pad+xT)/2,yy-14,C.accent3,18,'center',800);}
+};
+// test słuchu
+$$('#s-ftable [data-hf]').forEach(b=>b.addEventListener('click',()=>{const ctx=AE.init(); AE.beep(+b.dataset.hf,0,ctx.currentTime+0.05,1.5,0.25);}));
+
+/* ===== faza – koło ===== */
+let phRun=true, phT=0, phLast=null;
+$('#ph-run').addEventListener('click',()=>{phRun=!phRun; $('#ph-run').textContent=phRun?'⏸ pauza':'▶ ruch';});
+const phInfo=()=>{const p=+$('#ph-p').value; const frac={0:'0',90:'¼',180:'½',270:'¾',360:'1'}[p];
+  $('#ph-pv').textContent=p+'°'+(frac?' = '+frac+' okresu':'');};
+$('#ph-p').addEventListener('input',phInfo); phInfo();
+frame['s-phasor']=t=>{
+  if(phLast!==null&&phRun) phT+=t-phLast; phLast=t;
+  const {g,w,h}=fit($('#cv-phasor')); const phi=+$('#ph-p').value*Math.PI/180, th=phT*1.2;
+  const R=Math.min(h*0.38,w*0.14), cx=R+30, cy=h/2, x0=cx+R+40, pw=w-x0-20, span=4*Math.PI;
+  g.strokeStyle=C.grid; g.lineWidth=2; g.beginPath(); g.arc(cx,cy,R,0,TAU); g.stroke();
+  g.beginPath(); g.moveTo(cx-R-10,cy); g.lineTo(cx+R+10,cy); g.stroke();
+  box(g,x0,cy-R,pw,2*R);
+  // łuk φ
+  g.strokeStyle=C.violet; g.lineWidth=3; g.beginPath(); g.arc(cx,cy,R*0.35,-th,-(th+phi),true); g.stroke();
+  if(phi>0.01) text(g,'φ',cx+R*0.5*Math.cos(th+phi/2),cy-R*0.5*Math.sin(th+phi/2),C.violet,20,'center',800);
+  const arms=[[th,C.accent],[th+phi,C.accent2]];
+  for(const [a,col] of arms){
+    const px=cx+R*Math.cos(a), py=cy-R*Math.sin(a);
+    g.strokeStyle=col; g.lineWidth=3; g.beginPath(); g.moveTo(cx,cy); g.lineTo(px,py); g.stroke(); dot(g,px,py,7,col);
+    g.setLineDash([4,4]); g.lineWidth=1.5; g.beginPath(); g.moveTo(px,py); g.lineTo(x0,py); g.stroke(); g.setLineDash([]);
+    plot(g,x0,cy-R,pw,2*R,u=>Math.sin(a-u),0,span,col,3);
+    dot(g,x0,py,5,col);
+  }
+  text(g,'fala 1',x0+pw-8,cy-R-14,C.accent,15,'right',700); text(g,'fala 2 (przesunięta o φ)',x0+pw-70,cy-R-14,C.accent2,15,'right',700);
+};
+
+/* ===== interferencja ===== */
+let inV=null; const IN_F=330;
+const inP=()=>+$('#in-p').value*Math.PI/180;
+const inAmp=()=>Math.abs(Math.cos(inP()/2));
+const inT=toggle($('#in-play'),()=>{inV=AE.tone({f:IN_F,a:0.5*inAmp()});},()=>{inV&&inV.stop();});
+function inInfo(){ $('#in-pv').textContent=$('#in-p').value+'°';
+  const a=2*inAmp(); $('#in-info').innerHTML=`amplituda sumy: <b>${pl(a,2)}</b> (z maks. 2,00) → `+(a>1.8?'wzmocnienie 🔊':a<0.1?'<b style="color:var(--danger)">wygaszenie — cisza 🔇</b>':'częściowe osłabienie 🔉');
+  if(inT.on&&inV) inV.set({a:0.5*inAmp()}); }
+$('#in-p').addEventListener('input',inInfo);
+$$('#s-interf [data-ph]').forEach(b=>b.addEventListener('click',()=>{$('#in-p').value=b.dataset.ph; inInfo();}));
+inInfo();
+frame['s-interf']=t=>{
+  const {g,w,h}=fit($('#cv-interf')); const p=inP(), L=110, pw=w-L-14, U=h/4, run=inT.on?t*0.5:0;
+  const rows=[['fala 1',C.accent,u=>Math.sin(TAU*u),0,1],['fala 2',C.accent2,u=>Math.sin(TAU*u+p),1,1],['SUMA',C.accent3,u=>Math.sin(TAU*u)+Math.sin(TAU*u+p),2,2]];
+  rows.forEach(([lab,col,fn,u0,nu],r)=>{const y0=u0*U+4, hh=nu*U-8, ym=1.08*nu; box(g,L,y0,pw,hh); text(g,lab,12,y0+hh/2,col,18,'left',800);
+    if(r===2){ plot(g,L,y0,pw,hh,u=>2,0,3,C.grid,1,[3,5],ym); plot(g,L,y0,pw,hh,u=>-2,0,3,C.grid,1,[3,5],ym); }
+    plot(g,L,y0,pw,hh,u=>fn(u-run),0,3,col,r===2?4:3,null,ym);});
+};
+
+/* ===== kształt fali – oscyloskop + widmo ===== */
+let shV=null; const shF=()=>logF(+$('#sh-f').value,100,2000);
+const shA=()=>({sine:0.5,triangle:0.5,square:0.22,sawtooth:0.25}[$('#sh-type').value]);
+const shT=toggle($('#sh-play'),()=>{shV=AE.tone({f:shF(),a:shA(),type:$('#sh-type').value});},()=>{shV&&shV.stop();});
+const shUpd=()=>{$('#sh-fv').textContent=fmtHz(shF()); if(shT.on&&shV) shV.set({f:shF(),a:shA(),type:$('#sh-type').value});};
+$('#sh-f').addEventListener('input',shUpd); $('#sh-type').addEventListener('change',shUpd); shUpd();
+const shMic=toggle($('#sh-mic'),async()=>{const ok=await AE.micOn(); $('#sh-msg').textContent=ok?'':'Brak dostępu do mikrofonu — zezwól w przeglądarce (najlepiej Chrome).'; return ok;},()=>AE.micOff(),['🎤 mikrofon','■ wyłącz mikrofon']);
+frame['s-shapes']=()=>{ drawScope($('#cv-scope'),10,!!AE.mic); drawSpectrum($('#cv-spec'),5000); };
+
+/* ===== Fourier ===== */
+let foV=null; const FO_F=220;
+const foK=()=>{const n=+$('#fo-n').value, sq=$('#fo-kind').value==='sq', ks=[]; for(let i=1;i<=n;i++) ks.push(sq?2*i-1:i); return ks;};
+const foAmp=k=>$('#fo-kind').value==='sq'?1/k:((k%2?1:-1)/k);
+function foWave(){const ctx=AE.init(), ks=foK(), M=ks[ks.length-1]+1, re=new Float32Array(M+1), im=new Float32Array(M+1); ks.forEach(k=>im[k]=foAmp(k)); return ctx.createPeriodicWave(re,im);}
+const foT=toggle($('#fo-play'),()=>{foV=AE.tone({f:FO_F,a:0.3,wave:foWave()});},()=>{foV&&foV.stop();});
+const foUpd=()=>{$('#fo-nv').textContent=$('#fo-n').value; if(foT.on&&foV) foV.set({wave:foWave()});};
+$('#fo-n').addEventListener('input',foUpd); $('#fo-kind').addEventListener('change',foUpd); foUpd();
+frame['s-fourier']=()=>{
+  const sq=$('#fo-kind').value==='sq', ks=foK(), norm=sq?4/Math.PI:2/Math.PI;
+  let {g,w,h}=fit($('#cv-fo')); const pad=10, ym=1.35;
+  box(g,pad,pad,w-2*pad,h-2*pad);
+  const target=u=>{const x=((u%1)+1)%1; return sq?(x<0.5?1:-1):(x<0.5?2*x:2*x-2);};
+  plot(g,pad,pad,w-2*pad,h-2*pad,target,0,2,C.grid,2,[6,5],ym);
+  if(ks.length>1) ks.forEach((k,i)=>plot(g,pad,pad,w-2*pad,h-2*pad,u=>norm*foAmp(k)*Math.sin(TAU*k*u),0,2,`hsl(${(i*47)%360} 65% 55% / .55)`,1.3,null,ym));
+  plot(g,pad,pad,w-2*pad,h-2*pad,u=>norm*ks.reduce((s,k)=>s+foAmp(k)*Math.sin(TAU*k*u),0),0,2,C.accent2,4,null,ym);
+  ({g,w,h}=fit($('#cv-fob')));
+  const KM=sq?29:15, L=10, B=30, bw=(w-2*L)/KM;
+  for(let k=1;k<=KM;k++){const on=ks.includes(k), a=Math.abs(1/k), bh=(h-B-20)*a, x=L+(k-0.5)*bw;
+    g.fillStyle=on?C.accent:C.grid; g.globalAlpha=on?1:0.35; if(sq&&k%2===0){g.globalAlpha=0;} g.fillRect(x-bw*0.35,h-B-bh,bw*0.7,bh); g.globalAlpha=1;
+    if(k===1||k%(sq?4:2)===1||KM<=15&&k<=5) text(g,(k===1?'':k)+'f',x,h-B/2,C.muted,12,'center',600);}
+};
+
+/* ===== spektrogram ===== */
+const LUT=(()=>{const st=[[0,[11,13,18]],[60,[40,20,90]],[120,[150,30,110]],[180,[235,100,40]],[230,[250,210,60]],[255,[255,255,220]]], out=[];
+  for(let v=0;v<256;v++){let i=0; while(st[i+1][0]<v) i++; const [a,ca]=st[i],[b,cb]=st[Math.min(i+1,st.length-1)], t=b===a?0:(v-a)/(b-a); out.push(ca.map((c,j)=>Math.round(c+(cb[j]-c)*t)));}
+  return out;})();
+let sgLastW=0, sgLastH=0;
+frame['s-sg']=()=>{
+  const c=$('#cv-sg'), r=c.getBoundingClientRect(), d=window.devicePixelRatio||1, W=Math.round(r.width*d), H=Math.round(r.height*d);
+  const g=c.getContext('2d'); if(c.width!==W||c.height!==H){c.width=W;c.height=H;g.fillStyle='#0b0d12';g.fillRect(0,0,W,H);}
+  g.setTransform(1,0,0,1,0,0);
+  const fmax=+$('#sg-fmax').value, gutter=Math.round(56*d), plotW=W-gutter, dx=Math.max(2,Math.round(2*d));
+  g.drawImage(c,gutter+dx,0,plotW-dx,H,gutter,0,plotW-dx,H);
+  const col=g.createImageData(dx,H);
+  if(AE.ctx){ AE.an.getByteFrequencyData(AE.fb); const bw=AE.ctx.sampleRate/AE.an.fftSize;
+    for(let y=0;y<H;y++){const bin=Math.floor((1-y/H)*fmax/bw), v=AE.fb[bin]||0, cc=LUT[v]; for(let x=0;x<dx;x++){const o=(y*dx+x)*4; col.data[o]=cc[0];col.data[o+1]=cc[1];col.data[o+2]=cc[2];col.data[o+3]=255;}}}
+  else for(let i=0;i<col.data.length;i+=4){col.data[i]=11;col.data[i+1]=13;col.data[i+2]=18;col.data[i+3]=255;}
+  g.putImageData(col,W-dx,0);
+  // oś częstotliwości
+  g.fillStyle='#0b0d12'; g.fillRect(0,0,gutter,H);
+  const step=fmax<=4000?500:fmax<=8000?1000:2000; g.font=`${12*d}px system-ui`; g.fillStyle='#aab3c2'; g.textAlign='right'; g.textBaseline='middle';
+  for(let f=0;f<=fmax;f+=step){const y=H-H*f/fmax; g.fillText(f>=1000?(f/1000)+' kHz':f+' Hz',gutter-6*d,Math.min(H-8*d,Math.max(8*d,y))); g.fillStyle='#2a303b'; g.fillRect(gutter,y,4*d,1); g.fillStyle='#aab3c2';}
+};
+$('#sg-fmax').addEventListener('change',()=>{const c=$('#cv-sg'); c.width=1;});
+const sgMic=toggle($('#sg-mic'),async()=>{const ok=await AE.micOn(); $('#sg-msg').textContent=ok?'':'Brak dostępu do mikrofonu — zezwól w przeglądarce (najlepiej Chrome).'; return ok;},()=>AE.micOff(),['🎤 mikrofon','■ wyłącz mikrofon']);
+$('#sg-stop').addEventListener('click',()=>AE.stopVoices());
+$('#sg-sweep').addEventListener('click',()=>{AE.stopVoices(); const v=AE.tone({f:100,a:0.35}), t=AE.ctx.currentTime;
+  v.osc.frequency.cancelScheduledValues(t); v.osc.frequency.setValueAtTime(100,t); v.osc.frequency.exponentialRampToValueAtTime(8000,t+8);
+  setTimeout(()=>{if(AE.voices.has(v)) v.stop();},8200);});
+$('#sg-chord').addEventListener('click',()=>{AE.stopVoices(); [261.63,329.63,392.0].forEach(f=>AE.tone({f,a:0.18}));});
+$('#sg-sq').addEventListener('click',()=>{AE.stopVoices(); AE.tone({f:440,a:0.2,type:'square'});});
+
+/* ===== DTMF ===== */
+const DR=[697,770,852,941], DC=[1209,1336,1477,1633], DK=['123A','456B','789C','*0#D'];
+let dtOn=null, dtV=[];
+(function buildPads(){
+  const pads=$('#dt-pads'); DK.forEach((row,ri)=>[...row].forEach((k,ci)=>{const b=document.createElement('button'); b.textContent=k; if(/[A-D]/.test(k)) b.className='ltr';
+    const start=e=>{e.preventDefault(); stop(); dtOn=[ri,ci]; dtV=[AE.tone({f:DR[ri],a:0.22}),AE.tone({f:DC[ci],a:0.22})]; dtTable();};
+    const stop=()=>{dtV.forEach(v=>v.stop()); dtV=[]; dtOn=null; dtTable();};
+    b.addEventListener('pointerdown',start); b.addEventListener('pointerup',stop); b.addEventListener('pointerleave',()=>{if(dtV.length)stop();});
+    pads.appendChild(b);}));
+})();
+function dtTable(){
+  let s='<tr><th></th>'+DC.map((f,ci)=>`<th style="${dtOn&&dtOn[1]===ci?'color:var(--accent2)':''}">${f} Hz</th>`).join('')+'</tr>';
+  DR.forEach((f,ri)=>{s+=`<tr><th style="${dtOn&&dtOn[0]===ri?'color:var(--accent2)':''}">${f} Hz</th>`+[...DK[ri]].map((k,ci)=>`<td style="text-align:center;${dtOn&&dtOn[0]===ri&&dtOn[1]===ci?'background:var(--accent2);color:#fff;font-weight:800':''}">${k}</td>`).join('')+'</tr>';});
+  $('#dt-table').innerHTML=s;
+}
+dtTable();
+$('#dt-dial').addEventListener('click',()=>{const ctx=AE.init(); let t=ctx.currentTime+0.1;
+  for(const ch of $('#dt-num').value.toUpperCase()){ DK.forEach((row,ri)=>{const ci=row.indexOf(ch); if(ci>=0){AE.beep(DR[ri],DC[ci],t,0.16,0.22);
+      const at=(t-ctx.currentTime)*1000; setTimeout(()=>{dtOn=[ri,ci];dtTable();},at); setTimeout(()=>{dtOn=null;dtTable();},at+160);}}); t+=0.24; }});
+frame['s-dtmf']=()=>{ const m=[...DR.map((f,i)=>({f,on:dtOn&&dtOn[0]===i})),...DC.map((f,i)=>({f,on:dtOn&&dtOn[1]===i}))]; drawSpectrum($('#cv-dtmf'),2000,m); };
+
+/* ---------------- nawigacja ---------------- */
+const slides=$$('.slide'); let cur=0, spk=null;
+function notesHTML(i){const n=slides[i].querySelector('.notes'); return n?n.innerHTML:'<p class="muted">(brak notatek)</p>';}
+function updSpeaker(){
+  if(!spk||spk.closed) return;
+  const nx=slides[cur+1]?slides[cur+1].querySelector('h1,h2').textContent:'— koniec —';
+  spk.document.body.innerHTML=`<h3 style="margin:0 0 .3em">Slajd ${cur+1}/${slides.length}: ${slides[cur].querySelector('h1,h2').textContent}</h3>${notesHTML(cur)}<hr><p style="color:#777">Następny: ${nx}</p>`;
+}
+function show(i){
+  i=Math.max(0,Math.min(slides.length-1,i));
+  AE.stopAll(); resetters.forEach(f=>f()); phLast=null;
+  slides[cur].classList.remove('active'); cur=i; slides[cur].classList.add('active');
+  $('#prog div').style.width=(100*(cur+1)/slides.length)+'%'; $('#cnt').textContent=(cur+1)+' / '+slides.length;
+  $('#notes').innerHTML=notesHTML(cur); updSpeaker();
+  history.replaceState(null,'','#'+(cur+1));
+}
+const next=()=>show(cur+1), prev=()=>show(cur-1);
+$('#b-next').onclick=next; $('#b-prev').onclick=prev;
+$('#b-notes').onclick=()=>$('#notes').classList.toggle('show');
+$('#b-theme').onclick=toggleTheme;
+const fsToggle=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+$('#b-fs').onclick=fsToggle;
+function openSpeaker(){
+  spk=window.open('','notatki_prowadzacej','width=720,height=600');
+  if(!spk) return;
+  spk.document.title='Notatki prowadzącej';
+  spk.document.head.innerHTML='<style>body{font:18px/1.5 system-ui,sans-serif;padding:16px 22px;background:#fffdf6;color:#222}b{color:#b5520c}</style>';
+  updSpeaker();
+}
+$('#b-spk').onclick=openSpeaker;
+document.addEventListener('keydown',e=>{
+  const tag=e.target.tagName, k=e.key;
+  if(tag==='INPUT'&&(e.target.type==='text'||k==='ArrowLeft'||k==='ArrowRight'||k==='ArrowUp'||k==='ArrowDown')) return;
+  if(tag==='SELECT') return;
+  if(k==='ArrowRight'||k==='PageDown'||(k===' '&&tag!=='BUTTON')){e.preventDefault();next();}
+  else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();prev();}
+  else if(k==='Home') show(0); else if(k==='End') show(slides.length-1);
+  else if(k==='n'||k==='N') $('#notes').classList.toggle('show');
+  else if(k==='s'||k==='S') openSpeaker();
+  else if(k==='f'||k==='F') fsToggle();
+  else if(k==='t'||k==='T') toggleTheme();
+});
+// zdejmij fokus z przycisku po kliknięciu, by spacja/strzałki przewijały slajdy
+document.addEventListener('click',e=>{ if(e.target.tagName==='BUTTON') e.target.blur(); });
+
+function loop(now){ const f=frame[slides[cur].id]; if(f){ readColors(); try{f(now/1000);}catch(err){console.error(err);} } requestAnimationFrame(loop); }
+show((parseInt(location.hash.slice(1))||1)-1);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

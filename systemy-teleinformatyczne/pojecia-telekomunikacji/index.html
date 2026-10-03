@@ -1,0 +1,1035 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Podstawowe pojęcia telekomunikacji</title>
+<style>
+:root{
+  --bg:#f7f7f4; --panel:#ffffff; --fg:#1d2330; --muted:#5d6675; --grid:#d9dce2;
+  --accent:#1f6fd1; --accent2:#e2741d; --accent3:#1f9a5a; --danger:#d23b3b; --violet:#7a4cc9;
+  --chip:#eef2f8;
+}
+:root[data-theme="dark"]{
+  --bg:#12151b; --panel:#1b2029; --fg:#e9edf3; --muted:#9aa4b4; --grid:#323a47;
+  --accent:#5aa2ff; --accent2:#ff9a4a; --accent3:#43c785; --danger:#ff6464; --violet:#ae8cff;
+  --chip:#232a36;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;overflow:hidden}
+.slide{position:absolute;inset:0;padding:3.2vh 5vw 9vh;display:none;flex-direction:column;gap:1.6vh;overflow:auto}
+.slide.active{display:flex}
+.kicker{font-size:clamp(13px,1.05vw,18px);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-size:clamp(34px,4.6vw,80px);margin:0;line-height:1.05}
+h2{font-size:clamp(26px,3.0vw,50px);margin:0;line-height:1.1}
+p,li,td,th,label,.txt{font-size:clamp(17px,1.55vw,27px);line-height:1.4}
+p{margin:.2em 0}
+ul{margin:.2em 0;padding-left:1.2em} li{margin:.25em 0}
+.muted{color:var(--muted)}
+.big{font-size:clamp(22px,2.2vw,38px)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:2.4vw;align-items:start}
+.cols.c3{grid-template-columns:1fr 1fr 1fr}
+.cols.c4{grid-template-columns:1fr 1fr 1fr 1fr}
+.cols.c64{grid-template-columns:1.6fr 1fr}
+.card{background:var(--panel);border:1px solid var(--grid);border-radius:16px;padding:1.4vh 1.4vw}
+.card h3{margin:.1em 0 .3em;font-size:clamp(19px,1.7vw,30px)}
+.card p,.card li{font-size:clamp(15px,1.35vw,23px)}
+.card .emo{font-size:clamp(30px,3vw,54px)}
+.def{border-left:6px solid var(--accent);background:var(--panel);border-radius:10px;padding:1vh 1.4vw}
+.def p{font-size:clamp(19px,1.8vw,31px)}
+canvas.viz{width:100%;height:46vh;display:block;background:var(--panel);border:1px solid var(--grid);border-radius:14px}
+.ctrl{display:flex;gap:1vw;align-items:center;flex-wrap:wrap}
+.ctrl label{display:flex;align-items:center;gap:.6em;font-size:clamp(15px,1.3vw,22px)}
+input[type=range]{width:clamp(150px,16vw,320px);accent-color:var(--accent);height:28px}
+button,select,input[type=text]{font:inherit;font-size:clamp(15px,1.25vw,21px);padding:.35em .8em;border-radius:10px;border:1px solid var(--grid);
+  background:var(--panel);color:var(--fg)}
+button,select{cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+button.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+button.on{background:var(--danger);border-color:var(--danger);color:#fff}
+button:disabled{opacity:.4;cursor:not-allowed}
+.val{font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent);min-width:5ch;display:inline-block}
+.info{font-size:clamp(15px,1.3vw,22px);color:var(--muted)}
+.info b{color:var(--fg)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid var(--grid);padding:.35em .6em;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.tag{display:inline-block;background:var(--chip);border-radius:8px;padding:.05em .45em;font-weight:600}
+.good{color:var(--accent3);font-weight:600} .bad{color:var(--danger);font-weight:600}
+.mini{width:100%;height:24vh;display:block;background:var(--panel);border:1px solid var(--grid);border-radius:12px}
+details{background:var(--panel);border:1px solid var(--grid);border-radius:12px;padding:.6vh 1vw;margin:.6vh 0}
+details summary{cursor:pointer;font-size:clamp(16px,1.45vw,25px);font-weight:600}
+details p{color:var(--accent3);font-weight:600}
+.title-wrap{margin:auto 0;display:flex;flex-direction:column;gap:2vh}
+.timeline{display:flex;gap:1vw;flex-wrap:wrap}
+.timeline .card{flex:1;min-width:150px;text-align:center}
+.term{background:#0e1117;color:#d6e2f0;border-radius:12px;padding:1vh 1.2vw;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:clamp(12px,1.02vw,18px);white-space:pre;overflow:auto;min-height:20vh}
+.hint{position:fixed;right:1.2vw;top:1vh;font-size:13px;color:var(--muted);opacity:.7}
+#bar{position:fixed;left:0;right:0;bottom:0;height:6vh;min-height:44px;display:flex;align-items:center;gap:.8vw;padding:0 1.2vw;
+  background:var(--panel);border-top:1px solid var(--grid);z-index:10}
+#bar button{padding:.2em .7em}
+#prog{flex:1;height:6px;background:var(--grid);border-radius:4px;overflow:hidden}
+#prog div{height:100%;background:var(--accent);width:0}
+#cnt{font-variant-numeric:tabular-nums;color:var(--muted);font-size:15px;min-width:5ch;text-align:right}
+#notes{position:fixed;left:0;right:0;bottom:6vh;max-height:42vh;overflow:auto;background:var(--panel);border-top:3px solid var(--accent2);
+  padding:1.2vh 2vw;display:none;z-index:9;box-shadow:0 -8px 24px rgba(0,0,0,.15)}
+#notes.show{display:block}
+#notes, #notes *{font-size:clamp(14px,1.12vw,19px)}
+.notes{display:none}
+#gloss{position:fixed;inset:3vh 4vw 8vh;background:var(--panel);border:2px solid var(--accent2);border-radius:16px;padding:2vh 2vw;overflow:auto;
+  z-index:20;display:none;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+#gloss.show{display:block}
+#gloss td,#gloss th,#gloss p,#gloss li{font-size:clamp(13px,1.05vw,17px)}
+#gloss h2{font-size:clamp(22px,2vw,32px)}
+#gloss h3{margin:1.2em 0 .3em}
+@media (max-width:800px){.cols,.cols.c3,.cols.c4,.cols.c64{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hint">← → przewijanie · N notatki · S okno prowadzącej · G słowniczek · F pełny ekran · T motyw</div>
+
+<!-- ================= 1. TYTUŁ ================= -->
+<section class="slide" id="s-title">
+  <div class="title-wrap">
+    <div class="kicker">Systemy teleinformatyczne · wykład</div>
+    <h1>Podstawowe pojęcia telekomunikacji</h1>
+    <p class="big muted">tor · kanał · łącze · węzeł · topologia</p>
+    <p class="muted">mgr Jolanta Okarmus · Instytut Nauk Inżynieryjno-Technicznych</p>
+  </div>
+  <aside class="notes">
+    <p><b>Dla prowadzącej — o czym jest ten wykład (2 zdania):</b> to „słownik" telekomunikacji. Uczymy, jak nazywać elementy każdej sieci: <b>po czym</b> płynie sygnał (tor), <b>którędy i w którą stronę</b> (kanał, łącze), <b>gdzie się rozgałęzia</b> (węzeł) i <b>jak to wszystko jest poukładane</b> (topologia).</p>
+    <p><b>Cała prezentacja opiera się na jednej analogii — sieci dróg:</b> tor = sama droga (asfalt), kanał = jeden pas ruchu w jedną stronę, łącze = para pasów tam i z powrotem między dwoma miastami, węzeł = skrzyżowanie / dworzec, topologia = mapa dróg. Gdy student się zgubi — wracaj do dróg.</p>
+    <p><b>Klawisz G</b> otwiera słowniczek dla prowadzącej (jedna strona, można wydrukować). Warto przeczytać go przed wykładem.</p>
+    <p><b>Plan czasu (ok. 80 min):</b> wstęp i model systemu 10 min · tor/kanał/łącze/węzeł 30 min · topologie 25 min · traceroute + podsumowanie + quiz 15 min.</p>
+  </aside>
+</section>
+
+<!-- ================= 2. PLAN ================= -->
+<section class="slide" id="s-plan">
+  <div class="kicker">Plan</div>
+  <h2>O czym dziś?</h2>
+  <div class="cols">
+    <div class="card"><h3>1. Jak działa każda telekomunikacja</h3><p class="muted">model: nadawca → kanał → odbiorca</p></div>
+    <div class="card"><h3>2. Drogi sygnału</h3><p class="muted">tor, kanał, łącze, kierunki transmisji, multipleksacja</p></div>
+    <div class="card"><h3>3. Węzły i parametry łącza</h3><p class="muted">kto „kieruje ruchem", przepływność i opóźnienie</p></div>
+    <div class="card"><h3>4. Topologie sieci</h3><p class="muted">gwiazda, magistrala, pierścień, drzewo, siatka — i co się dzieje przy awarii</p></div>
+  </div>
+  <div class="card" style="margin-top:1vh"><p>🛣️ <b>Klucz do całego wykładu:</b> sieć telekomunikacyjna jest jak <b>sieć dróg</b>.</p></div>
+  <aside class="notes">
+    <p>Zapowiedz analogię drogową od razu — studenci łatwiej zapamiętają pojęcia, jeśli każde „przyczepią" do czegoś znanego.</p>
+    <p>Powiedz, że będzie dużo klikania i „psucia" sieci — to ich zwykle zaciekawia.</p>
+  </aside>
+</section>
+
+<!-- ================= 3. TELEKOMUNIKACJA ================= -->
+<section class="slide" id="s-tele">
+  <div class="kicker">Część 1 · Wstęp</div>
+  <h2>Telekomunikacja = przesyłanie informacji na odległość</h2>
+  <p><i>tele</i> (gr.) — daleko · <i>communicare</i> (łac.) — przekazywać, dzielić się</p>
+  <div class="timeline">
+    <div class="card"><div class="emo">🔥🥁</div><h3>starożytność</h3><p class="muted">ogniska, dym, bębny</p></div>
+    <div class="card"><div class="emo">📠</div><h3>1844</h3><p class="muted">telegraf Morse'a</p></div>
+    <div class="card"><div class="emo">☎️</div><h3>1876</h3><p class="muted">telefon (Bell)</p></div>
+    <div class="card"><div class="emo">📻</div><h3>ok. 1900</h3><p class="muted">radio (Marconi)</p></div>
+    <div class="card"><div class="emo">🌐</div><h3>1969</h3><p class="muted">ARPANET — przodek internetu</p></div>
+    <div class="card"><div class="emo">📱</div><h3>dziś</h3><p class="muted">światłowody, 5G, Wi-Fi, satelity</p></div>
+  </div>
+  <p class="big">Technika się zmienia — <b>pojęcia zostają te same</b>.</p>
+  <aside class="notes">
+    <p><b>W skrócie:</b> od ognisk na wzgórzach po 5G zawsze jest ktoś, kto nadaje, droga, którą biegnie sygnał, i ktoś, kto odbiera. Dlatego pojęcia z tego wykładu (tor, kanał, łącze, węzeł) pasują i do telegrafu, i do internetu.</p>
+    <p><b>Teleinformatyka</b> (nazwa przedmiotu) = telekomunikacja + informatyka: przesyłanie i przetwarzanie danych komputerowych przez sieci.</p>
+    <p>Daty są orientacyjne — nie trzeba ich wymagać na kolokwium.</p>
+  </aside>
+</section>
+
+<!-- ================= 4. MODEL SYSTEMU ================= -->
+<section class="slide" id="s-model">
+  <div class="kicker">Część 1 · Model systemu telekomunikacyjnego</div>
+  <h2>Nadawca → kanał → odbiorca</h2>
+  <div class="ctrl">
+    <label>wiadomość <input type="text" id="md-msg" value="Spotkajmy się o 18:00 pod biblioteką" style="width:22em"></label>
+    <label>zakłócenia <input type="range" id="md-noise" min="0" max="40" value="5"> <span class="val" id="md-nv"></span></label>
+    <button class="primary" id="md-send">📨 Wyślij</button>
+  </div>
+  <canvas class="viz" id="cv-model" style="height:36vh"></canvas>
+  <p>Odebrano: <span id="md-out" class="mono" style="font-size:clamp(17px,1.6vw,28px)"></span></p>
+  <aside class="notes">
+    <p><b>W skrócie:</b> każdy system telekomunikacyjny ma te same klocki: <b>źródło</b> informacji (człowiek, komputer) → <b>nadajnik</b> (zamienia informację na sygnał, np. telefon zamienia głos na prąd/fale radiowe) → <b>kanał</b> (droga sygnału, tu działają <b>zakłócenia</b>) → <b>odbiornik</b> (odtwarza informację z sygnału) → <b>odbiorca</b>.</p>
+    <p><b>Co kliknąć:</b> wyślij wiadomość przy małych zakłóceniach, potem przesuń suwak na 30–40% i wyślij jeszcze raz — litery zaczynają się przekłamywać (czerwone).</p>
+    <p><b>Co mówić:</b> „Zakłócenia są zawsze. Cała telekomunikacja to walka o to, żeby mimo nich informacja doszła poprawnie." (Ten model pochodzi od Claude'a Shannona, 1948 r. — można wspomnieć.)</p>
+    <p><b>Jeśli zapytają, skąd zakłócenia:</b> inne urządzenia elektryczne, burze, inne sieci Wi-Fi na tym samym kanale, uszkodzony kabel, zbyt duża odległość.</p>
+  </aside>
+</section>
+
+<!-- ================= 5. MAPA POŁĄCZENIA ================= -->
+<section class="slide" id="s-map">
+  <div class="kicker">Część 2 · Drogi sygnału</div>
+  <h2>Jedna rozmowa telefoniczna — cztery pojęcia</h2>
+  <div class="ctrl">
+    <span class="info">pokaż:</span>
+    <button data-show="tor">🛣️ tor</button>
+    <button data-show="kanal">➡️ kanał</button>
+    <button data-show="lacze">⇄ łącze</button>
+    <button data-show="wezel">🔵 węzeł</button>
+    <button data-show="all">wszystko</button>
+    <button data-show="none">nic</button>
+  </div>
+  <canvas class="viz" id="cv-map" style="height:44vh"></canvas>
+  <div class="def"><p id="map-desc"></p></div>
+  <aside class="notes">
+    <p><b>W skrócie:</b> to najważniejszy slajd części drugiej — jeden obrazek, na którym pokazujemy wszystkie cztery pojęcia. Ania (A) dzwoni do Bartka (B). Sygnał idzie: telefon → kabel do centrali (<b>łącze abonenckie</b>) → centrala → światłowód do drugiej centrali (<b>łącze międzycentralowe</b>) → centrala → kabel → telefon.</p>
+    <p><b>Co kliknąć (po kolei):</b></p>
+    <ul>
+      <li><b>tor</b> — fizyczne kable: para miedziana i światłowód. To „asfalt" — sama droga, po której biegnie sygnał.</li>
+      <li><b>kanał</b> — niebieska strzałka: droga sygnału <b>od A do B, w jednym kierunku</b>. Uwaga: w światłowodzie jest wiele cienkich linii — to kanały innych rozmów. Jeden tor niesie wiele kanałów.</li>
+      <li><b>łącze</b> — dwa kanały: A→B (niebieski) i B→A (zielony). Dopiero łącze pozwala rozmawiać w obie strony.</li>
+      <li><b>węzeł</b> — centrale (węzły pośredniczące, kierują ruchem) i telefony (węzły końcowe).</li>
+    </ul>
+    <p><b>Jeśli zapytają „czy to nie to samo?":</b> w mowie potocznej tak się mówi, ale w technice: tor = fizyczne medium, kanał = droga w jedną stronę, łącze = komunikacja w obie strony między dwoma punktami.</p>
+  </aside>
+</section>
+
+<!-- ================= 6. TOR ================= -->
+<section class="slide" id="s-tor">
+  <div class="kicker">Część 2 · Tor</div>
+  <h2>Tor transmisyjny — „asfalt" telekomunikacji</h2>
+  <div class="def"><p><b>Tor</b> — fizyczne środowisko, w którym rozchodzi się sygnał (fala elektromagnetyczna). Tor jest <b>bierny</b>: niczego nie wzmacnia ani nie przetwarza, tylko <b>prowadzi</b> sygnał.</p></div>
+  <div class="cols c4">
+    <div class="card"><div class="emo">🔌</div><h3>Para przewodów</h3><p>skrętka, linia telefoniczna</p><p class="muted">sieci LAN, telefon stacjonarny</p></div>
+    <div class="card"><div class="emo">📺</div><h3>Kabel koncentryczny</h3><p>przewód w oplocie</p><p class="muted">telewizja kablowa, anteny</p></div>
+    <div class="card"><div class="emo">💡</div><h3>Światłowód</h3><p>szklane włókno, światło</p><p class="muted">szkielet internetu, FTTH</p></div>
+    <div class="card"><div class="emo">📡</div><h3>Tor radiowy</h3><p>przestrzeń między antenami</p><p class="muted">Wi-Fi, GSM, radiolinie, satelity</p></div>
+  </div>
+  <p>🛣️ Analogia: tor to <b>sama droga</b> — asfalt, tory kolejowe albo szlak lotniczy. Jeszcze nie mówi, kto i w którą stronę jedzie.</p>
+  <aside class="notes">
+    <p><b>W skrócie:</b> tor = „po czym" biegnie sygnał. Kabel, włókno, a w łączności bezprzewodowej — po prostu przestrzeń (powietrze, próżnia) między antenami.</p>
+    <p><b>Co mówić:</b> szczegóły mediów (kategorie skrętki, rodzaje światłowodów) będą na osobnym wykładzie „Media transmisyjne" — dziś wystarczy wiedzieć, że tor to fizyczna droga.</p>
+    <p><b>Jeśli zapytają „czy Wi-Fi ma tor?":</b> tak — tor radiowy, czyli przestrzeń, przez którą biegnie fala. Nie widać go, ale jest.</p>
+    <p><b>Jeśli zapytają o wzmacniacze:</b> wzmacniacz nie jest częścią toru (tor jest bierny); wzmacniacze, modemy itp. to urządzenia, które razem z torem tworzą kanał.</p>
+  </aside>
+</section>
+
+<!-- ================= 7. KANAŁ ================= -->
+<section class="slide" id="s-kanal">
+  <div class="kicker">Część 2 · Kanał</div>
+  <h2>Kanał — droga sygnału w jedną stronę</h2>
+  <div class="def"><p><b>Kanał</b> — zespół środków technicznych (tor + urządzenia), który pozwala przesłać sygnał <b>z punktu A do punktu B</b>, w <b>jednym kierunku</b>.</p></div>
+  <div class="cols">
+    <div class="card"><h3>🛣️ Analogia</h3><p>Kanał to <b>jeden pas ruchu</b> w jedną stronę. Na jednej szerokiej drodze (torze) może być <b>wiele pasów</b> (kanałów).</p></div>
+    <div class="card"><h3>📡 Przykłady</h3><ul><li>stacja radiowa FM — kanał od nadajnika do słuchaczy</li><li>„kanał 6" w Wi-Fi — wydzielony kawałek pasma radiowego</li><li>w jednym światłowodzie — tysiące kanałów rozmów</li></ul></div>
+  </div>
+  <p class="big">Jeden <b>tor</b> → wiele <b>kanałów</b>. Jak? To <b>multipleksacja</b> — za chwilę.</p>
+  <aside class="notes">
+    <p><b>W skrócie:</b> kanał to „którędy i w którą stronę". Tor jest fizyczny, kanał jest „wydzieloną drogą" na tym torze — np. jedną częstotliwością albo jednym okienkiem czasu. Na jednym torze może być wiele kanałów.</p>
+    <p><b>Uwaga na zamieszanie pojęciowe:</b> w informatyce i w mowie potocznej „kanał" często oznacza po prostu „połączenie" (np. „kanał komunikacji z klientem") albo pasmo radiowe („kanał Wi-Fi"). W klasycznej telekomunikacji (np. Encyklopedia PWN) kanał to droga <b>w jednym kierunku</b> — i tej definicji używamy.</p>
+    <p><b>Jeśli zapytają o parametry kanału:</b> najważniejsze to przepływność (ile bitów na sekundę), opóźnienie i liczba błędów — pokażemy na slajdzie o parametrach.</p>
+  </aside>
+</section>
+
+<!-- ================= 8. ŁĄCZE ================= -->
+<section class="slide" id="s-lacze">
+  <div class="kicker">Część 2 · Łącze</div>
+  <h2>Łącze — tam i z powrotem</h2>
+  <div class="def"><p><b>Łącze</b> — zwykle <b>dwa kanały o przeciwnych kierunkach</b> (A→B i B→A) między dwoma punktami sieci. Pozwala na <b>wymianę</b> informacji, a nie tylko jej wysłanie.</p></div>
+  <div class="cols c3">
+    <div class="card"><h3>🏠 Łącze abonenckie</h3><p>od domu / firmy do najbliższego węzła operatora</p><p class="muted">„ostatnia mila"</p></div>
+    <div class="card"><h3>🏢 Łącze międzywęzłowe</h3><p>między centralami / routerami operatora</p><p class="muted">zwykle światłowód, wiele kanałów</p></div>
+    <div class="card"><h3>📄 Łącze dzierżawione</h3><p>na stałe wynajęte od operatora, np. między oddziałami firmy</p></div>
+  </div>
+  <p>🛣️ Analogia: <b>para pasów — tam i z powrotem</b> — między dwoma miastami. &nbsp; 💬 „Mam łącze 300 Mb/s" = mam drogę do internetu o takiej przepustowości.</p>
+  <aside class="notes">
+    <p><b>W skrócie:</b> kanał to jedna strona, łącze to obie strony. Rozmowa telefoniczna wymaga łącza (mówię i słucham), stacja radiowa wystarczy z kanałem (tylko nadaje).</p>
+    <p><b>Kolejność od najmniejszego:</b> tor (fizyczne medium) → kanał (droga w jedną stronę po torze) → łącze (para kanałów tam i z powrotem) → sieć (wiele łączy i węzłów).</p>
+    <p><b>Jeśli zapytają, czy łącze to zawsze dwa kanały:</b> „zwykle" — definicje w literaturze się nieco różnią; czasem łączem nazywa się po prostu każde połączenie dwóch punktów sieci. Na kolokwium wystarczy: łącze = komunikacja w obie strony między dwoma punktami.</p>
+    <p><b>„Ostatnia mila"</b> = odcinek od operatora do klienta — najdroższy do zbudowania, bo trzeba dociągnąć kabel do każdego domu osobno.</p>
+  </aside>
+</section>
+
+<!-- ================= 9. SIMPLEKS / DUPLEKS ================= -->
+<section class="slide" id="s-duplex">
+  <div class="kicker">Część 2 · Kierunki transmisji</div>
+  <h2>Simpleks, półdupleks, dupleks</h2>
+  <div class="ctrl">
+    <button data-dx="simplex">📻 simpleks</button>
+    <button data-dx="half">📟 półdupleks</button>
+    <button data-dx="full">📞 dupleks</button>
+    <span style="width:2vw"></span>
+    <button id="dx-a">🗣️ A nadaje</button>
+    <button id="dx-b">🗣️ B nadaje</button>
+  </div>
+  <canvas class="viz" id="cv-duplex" style="height:40vh"></canvas>
+  <div class="def"><p id="dx-info"></p></div>
+  <aside class="notes">
+    <p><b>W skrócie:</b></p>
+    <ul>
+      <li><b>simpleks</b> — tylko w jedną stronę, zawsze (radio FM, telewizja, pager). Ulica jednokierunkowa.</li>
+      <li><b>półdupleks</b> — w obie strony, ale <b>na zmianę</b> (krótkofalówka: „odbiór!"). Wąski most z ruchem wahadłowym.</li>
+      <li><b>dupleks</b> (pełny dupleks) — w obie strony <b>jednocześnie</b> (telefon). Droga dwukierunkowa = łącze z dwoma kanałami.</li>
+    </ul>
+    <p><b>Co kliknąć:</b> wybierz tryb, potem „A nadaje" i „B nadaje". W półdupleksie włącz oba naraz → <b>kolizja</b> (nikt nic nie rozumie). W dupleksie oba naraz → działa, bo są dwa osobne pasy.</p>
+    <p><b>Jeśli zapytają o przykłady w sieciach:</b> Wi-Fi działa półdupleksowo (urządzenia nadają na zmianę na tym samym kanale radiowym); kabel Ethernet w nowoczesnych sieciach — dupleks.</p>
+  </aside>
+</section>
+
+<!-- ================= 10. MULTIPLEKSACJA ================= -->
+<section class="slide" id="s-mux">
+  <div class="kicker">Część 2 · Wiele kanałów w jednym torze</div>
+  <h2>Multipleksacja — jak zmieścić wiele rozmów w jednym kablu?</h2>
+  <div class="ctrl">
+    <button data-mx="fdm">📻 FDM — podział częstotliwości</button>
+    <button data-mx="tdm">⏱️ TDM — podział czasu</button>
+    <button data-mx="wdm">🌈 WDM — podział długości fali</button>
+    <label>liczba rozmów <input type="range" id="mx-n" min="1" max="8" value="4"> <span class="val" id="mx-nv"></span></label>
+  </div>
+  <canvas class="viz" id="cv-mux" style="height:42vh"></canvas>
+  <div class="def"><p id="mx-info"></p></div>
+  <aside class="notes">
+    <p><b>W skrócie:</b> multiplekser (MUX) „zbiera" wiele kanałów i wysyła je jednym torem; demultiplekser (DEMUX) na drugim końcu je rozdziela. Trzy podstawowe sposoby:</p>
+    <ul>
+      <li><b>FDM</b> (Frequency Division Multiplexing) — każdy kanał dostaje <b>swoją częstotliwość</b> i nadaje cały czas. Jak stacje radiowe: RMF, Trójka, Zet grają jednocześnie w tym samym „eterze", każda na innej częstotliwości. (Nawiązanie do wykładu o widmie: w widmie byłyby to osobne „paski".)</li>
+      <li><b>TDM</b> (Time Division Multiplexing) — wszyscy na tej samej częstotliwości, ale <b>na zmianę</b>, w krótkich szczelinach czasu. Jak karuzela albo sygnalizacja świetlna. Dzieje się to tak szybko (tysiące razy na sekundę), że każdy ma wrażenie ciągłej rozmowy.</li>
+      <li><b>WDM</b> (Wavelength Division) — FDM dla światłowodów: każdy kanał to <b>inny kolor światła</b>. Jedno włókno może nieść kilkadziesiąt kolorów, każdy np. 100 Gb/s.</li>
+    </ul>
+    <p><b>Co kliknąć:</b> przełącz FDM → TDM → WDM, zmieniaj liczbę rozmów. Zwróć uwagę na informację pod spodem: im więcej rozmów, tym mniejszy kawałek przepływności dla każdej.</p>
+    <p><b>Jeśli zapytają o telefony komórkowe:</b> sieci 4G/5G używają bardziej zaawansowanej odmiany (OFDMA — połączenie podziału częstotliwości i czasu). Nie trzeba rozwijać.</p>
+  </aside>
+</section>
+
+<!-- ================= 11. WĘZEŁ ================= -->
+<section class="slide" id="s-wezel">
+  <div class="kicker">Część 3 · Węzeł</div>
+  <h2>Węzeł — skrzyżowanie sieci</h2>
+  <div class="def"><p><b>Węzeł</b> — punkt sieci, w którym zbiegają się łącza. Węzeł pośredniczący <b>odbiera</b> sygnał, <b>decyduje, dokąd dalej</b> i <b>wysyła</b> go właściwym łączem.</p></div>
+  <div class="cols">
+    <div class="card"><h3>🔵 Węzły końcowe</h3><p>tu informacja powstaje albo trafia do celu</p><p class="muted">💻 komputer · 📱 telefon · 🖥️ serwer · 🖨️ drukarka · 📷 kamera IP</p></div>
+    <div class="card"><h3>🟠 Węzły pośredniczące</h3><p>„kierują ruchem"</p><p class="muted">🔀 switch (przełącznik) · 🧭 router · 🏢 centrala telefoniczna · 📶 stacja bazowa GSM/5G</p></div>
+  </div>
+  <div class="cols">
+    <div class="card"><h3>🛣️ Analogie</h3><p>skrzyżowanie / rondo · dworzec przesiadkowy · sortownia poczty — list nie jedzie prosto do adresata, tylko przez kolejne sortownie</p></div>
+    <div class="card"><h3>🏠 Twój „router" w domu to kilka węzłów w jednym pudełku</h3><p class="muted">modem (łącze do operatora) + router (kieruje do internetu) + switch (gniazda LAN) + punkt dostępowy Wi-Fi</p></div>
+  </div>
+  <aside class="notes">
+    <p><b>W skrócie:</b> sieć = węzły + łącza. Węzły końcowe to „domy" (tu się zaczyna i kończy podróż), węzły pośredniczące to „skrzyżowania" (tu zapada decyzja, w którą stronę dalej). Wybieranie drogi w sieci to <b>komutacja</b> (w telefonii) albo <b>routing / trasowanie</b> (w internecie).</p>
+    <p><b>Jeśli zapytają „czym się różni switch od routera?":</b> switch (przełącznik) łączy urządzenia <b>w jednej sieci lokalnej</b> (np. w pracowni) i rozsyła dane po adresach sprzętowych (MAC). Router łączy <b>różne sieci</b> (np. sieć domową z internetem) i kieruje dane po adresach IP. Analogia: switch to korytarz z drzwiami do pokoi w jednym budynku, router to skrzyżowanie między miastami.</p>
+    <p><b>Jeśli zapytają „ile węzłów jest między mną a Google?":</b> zwykle 8–15 — pokażemy pod koniec wykładu poleceniem traceroute.</p>
+  </aside>
+</section>
+
+<!-- ================= 12. PARAMETRY ŁĄCZA ================= -->
+<section class="slide" id="s-params">
+  <div class="kicker">Część 3 · Parametry łącza</div>
+  <h2>Szybkie łącze ≠ krótki czas odpowiedzi</h2>
+  <div class="ctrl">
+    <span class="info">przykłady:</span>
+    <button data-pr="wifi">📶 Wi-Fi w domu</button>
+    <button data-pr="fiber">💡 światłowód Warszawa–Kraków</button>
+    <button data-pr="sat">🛰️ satelita geostacjonarny</button>
+    <button data-pr="modem">📞 modem z lat 90.</button>
+  </div>
+  <div class="ctrl">
+    <label>plik <input type="range" id="pr-size" min="0" max="1000" value="600"> <span class="val" id="pr-sv"></span></label>
+    <label>przepływność <input type="range" id="pr-rate" min="0" max="1000" value="600"> <span class="val" id="pr-rv"></span></label>
+    <label>odległość <input type="range" id="pr-dist" min="0" max="1000" value="300"> <span class="val" id="pr-dv"></span></label>
+    <select id="pr-med"><option value="2e8">kabel / światłowód (200 000 km/s)</option><option value="3e8">radio / satelita (300 000 km/s)</option></select>
+  </div>
+  <canvas class="viz" id="cv-params" style="height:28vh"></canvas>
+  <div class="cols">
+    <div class="card"><h3>📦 Przepływność [b/s]</h3><p>ile bitów na sekundę „wjeżdża" na łącze — <b>liczba pasów</b> autostrady</p></div>
+    <div class="card"><h3>⏱️ Opóźnienie [ms]</h3><p>ile trwa podróż jednego bitu — <b>długość drogi</b>; ping = tam i z powrotem</p></div>
+  </div>
+  <aside class="notes">
+    <p><b>W skrócie:</b> łącze ma dwa najważniejsze parametry:</p>
+    <ul>
+      <li><b>przepływność</b> (potocznie „prędkość łącza", np. 300 Mb/s) — ile danych na sekundę można wpuścić. Decyduje, jak długo <b>wysyła się duży plik</b>.</li>
+      <li><b>opóźnienie</b> — ile trwa droga sygnału z A do B. Zależy od <b>odległości</b> (sygnał biegnie ok. 200 000 km/s w kablu, 300 000 km/s w powietrzu). Decyduje o „lagach" w grach i rozmowach wideo.</li>
+    </ul>
+    <p><b>Co kliknąć:</b> „Wi-Fi w domu" — opóźnienie mikroskopijne. „Satelita geostacjonarny" — nawet przy szybkim łączu sama droga (36 000 km w górę i tyle samo w dół) to ok. 0,24 s w jedną stronę. Zmniejsz plik do 1 kB — wtedy liczy się już tylko opóźnienie.</p>
+    <p><b>Pułapka:</b> b (bit) ≠ B (bajt). 1 B = 8 b. Łącze „100 Mb/s" ściąga ok. 12,5 MB na sekundę. Kalkulator na slajdzie to uwzględnia.</p>
+    <p><b>Analogia:</b> autostrada: liczba pasów (przepływność) mówi, ile aut na minutę przejedzie; długość trasy (opóźnienie) — ile jedzie jedno auto. Poszerzenie autostrady nie skróci podróży jednego samochodu!</p>
+  </aside>
+</section>
+
+<!-- ================= 13. TOPOLOGIA – WSTĘP ================= -->
+<section class="slide" id="s-topo-intro">
+  <div class="kicker">Część 4 · Topologie</div>
+  <h2>Topologia = „mapa" sieci</h2>
+  <div class="def"><p><b>Topologia</b> — sposób połączenia węzłów łączami. Rysujemy ją jak mapę: <b>kropki = węzły</b>, <b>kreski = łącza</b>.</p></div>
+  <div class="cols">
+    <div class="card"><h3>🧱 Topologia fizyczna</h3><p>jak <b>naprawdę biegną kable</b> (albo fale)</p><p class="muted">np. wszystkie komputery w pracowni mają kabel do jednej szafy → gwiazda</p></div>
+    <div class="card"><h3>🔁 Topologia logiczna</h3><p>jak <b>płyną dane</b> — kto z kim i w jakiej kolejności „rozmawia"</p><p class="muted">np. dawny Token Ring: kable w gwiazdę, ale dane krążyły po kolei jak w pierścieniu</p></div>
+  </div>
+  <p>Wybór topologii to zawsze kompromis: <b>koszt</b> (ile kabli i urządzeń) ⇄ <b>niezawodność</b> (co się stanie przy awarii).</p>
+  <aside class="notes">
+    <p><b>W skrócie:</b> topologia to „kształt" sieci. Na mapie nie interesuje nas, czy kabel jest niebieski i ile ma metrów — tylko <b>kto jest połączony z kim</b>.</p>
+    <p><b>Fizyczna vs logiczna:</b> zwykle studentom wystarcza przykład: w pracowni kable biegną gwiaździście do switcha (fizyczna gwiazda), a Wi-Fi to fizycznie „nic" (fale we wszystkie strony), ale logicznie też gwiazda — wszyscy rozmawiają przez punkt dostępowy.</p>
+    <p>Na następnym slajdzie będzie „laboratorium" — tam studenci najlepiej zrozumieją kompromis koszt ⇄ niezawodność.</p>
+  </aside>
+</section>
+
+<!-- ================= 14. LABORATORIUM TOPOLOGII ================= -->
+<section class="slide" id="s-topo">
+  <div class="kicker">Część 4 · Laboratorium topologii</div>
+  <h2>Zepsuj sieć! <span class="muted" style="font-size:.6em">kliknij łącze albo węzeł, by wywołać awarię</span></h2>
+  <div class="ctrl">
+    <select id="tp-type">
+      <option value="p2p">punkt–punkt</option>
+      <option value="bus">magistrala</option>
+      <option value="ring">pierścień (pojedynczy)</option>
+      <option value="ring2">pierścień podwójny</option>
+      <option value="star" selected>gwiazda</option>
+      <option value="tree">drzewo</option>
+      <option value="meshp">siatka częściowa</option>
+      <option value="meshf">siatka pełna</option>
+    </select>
+    <label>węzłów <input type="range" id="tp-n" min="3" max="12" value="6"> <span class="val" id="tp-nv"></span></label>
+    <button class="primary" id="tp-send">📨 wyślij pakiet A → B</button>
+    <button id="tp-fix">🔧 napraw wszystko</button>
+  </div>
+  <canvas class="viz" id="cv-topo" style="height:47vh;cursor:pointer"></canvas>
+  <p class="info" id="tp-info"></p>
+  <aside class="notes">
+    <p><b>Najważniejsza interakcja wykładu.</b> Kliknięcie łącza (kreski) lub węzła (kółka/kwadratu) psuje go; drugie kliknięcie naprawia. Zielone węzły mogą się ze sobą komunikować, czerwone straciły łączność. <b>Shift + kliknięcie</b> na komputerze ustawia go jako cel B.</p>
+    <p><b>Proponowany scenariusz (ok. 10 min):</b></p>
+    <ul>
+      <li><b>gwiazda:</b> zepsuj łącze jednego komputera → odpada tylko on. Zepsuj <b>środek</b> (switch) → pada wszystko. „Pojedynczy punkt awarii".</li>
+      <li><b>magistrala:</b> przetnij kabel magistrali → pada <b>cała sieć</b> (na przeciętym kablu sygnał odbija się od końca i zakłóca resztę — dlatego na końcach są terminatory).</li>
+      <li><b>pierścień pojedynczy:</b> dane płyną w jedną stronę (strzałki) — jedna awaria przerywa krąg. Przełącz na <b>pierścień podwójny</b> — dane mogą zawrócić, sieć przetrwa jedną awarię.</li>
+      <li><b>drzewo:</b> zepsuj switch środkowy → odpada cała „gałąź".</li>
+      <li><b>siatka pełna:</b> psuj, ile chcesz — pakiet zawsze znajdzie objazd. Ale spójrz na licznik kabli: przy 12 węzłach to 66 łączy!</li>
+    </ul>
+    <p><b>Wniosek do powiedzenia:</b> więcej łączy = drożej, ale bezpieczniej. Internet to siatka częściowa — kompromis.</p>
+  </aside>
+</section>
+
+<!-- ================= 15. MAGISTRALA I PIERŚCIEŃ ================= -->
+<section class="slide" id="s-bus-ring">
+  <div class="kicker">Część 4 · Topologie</div>
+  <h2>Magistrala i pierścień</h2>
+  <div class="cols">
+    <div class="card"><canvas class="mini" data-topo="bus"></canvas>
+      <h3>Magistrala (szyna)</h3>
+      <p>wszyscy „wpięci" w jeden wspólny kabel; każdy słyszy każdego</p>
+      <p><span class="good">+</span> mało kabla, tanio</p>
+      <p><span class="bad">−</span> przerwanie kabla = awaria całej sieci; kolizje, gdy dwóch nadaje naraz</p>
+      <p class="muted">dawny Ethernet na koncentryku · magistrala CAN w samochodzie · szyny w automatyce</p></div>
+    <div class="card"><canvas class="mini" data-topo="ring"></canvas>
+      <h3>Pierścień</h3>
+      <p>każdy węzeł połączony z dwoma sąsiadami; dane krążą po kolei</p>
+      <p><span class="good">+</span> uporządkowany dostęp, brak kolizji</p>
+      <p><span class="bad">−</span> pojedynczy pierścień: jedna awaria przerywa krąg → stąd <b>pierścienie podwójne</b></p>
+      <p class="muted">Token Ring, FDDI (historyczne) · światłowodowe pierścienie operatorów (SDH) · metro okrężne</p></div>
+  </div>
+  <aside class="notes">
+    <p><b>W skrócie:</b> to dwie „historyczne" topologie sieci komputerowych, ale wciąż żywe gdzie indziej: magistrala w samochodach i automatyce przemysłowej (temat „Sieci przemysłowe" w sylabusie), pierścienie — w sieciach operatorów, gdzie przerwany światłowód jest automatycznie omijany w drugą stronę pierścienia (w ciągu milisekund).</p>
+    <p><b>Analogie:</b> magistrala = korytarz, z którego wchodzi się do wszystkich pokoi (i wszyscy słyszą, kto krzyczy na korytarzu); pierścień = linia okrężna metra albo podawanie sobie mikrofonu w kółko.</p>
+    <p><b>Jeśli zapytają o kolizje w magistrali:</b> jeśli dwa komputery nadają jednocześnie, sygnały się nakładają i oba są nieczytelne — trzeba odczekać i nadać jeszcze raz (mechanizm CSMA/CD w Ethernecie).</p>
+  </aside>
+</section>
+
+<!-- ================= 16. GWIAZDA I DRZEWO ================= -->
+<section class="slide" id="s-star-tree">
+  <div class="kicker">Część 4 · Topologie</div>
+  <h2>Gwiazda i drzewo</h2>
+  <div class="cols">
+    <div class="card"><canvas class="mini" data-topo="star"></canvas>
+      <h3>Gwiazda</h3>
+      <p>każdy węzeł ma osobne łącze do <b>węzła centralnego</b> (switch, punkt dostępowy)</p>
+      <p><span class="good">+</span> awaria jednego kabla odcina tylko jedno urządzenie; łatwo dodać nowe; łatwo znaleźć usterkę</p>
+      <p><span class="bad">−</span> awaria środka = awaria wszystkiego; dużo kabla</p>
+      <p class="muted">sieć w pracowni i w domu · Wi-Fi · lotnisko przesiadkowe (hub)</p></div>
+    <div class="card"><canvas class="mini" data-topo="tree"></canvas>
+      <h3>Drzewo (gwiazda rozszerzona)</h3>
+      <p>gwiazdy połączone hierarchicznie: główny węzeł → węzły pośrednie → urządzenia</p>
+      <p><span class="good">+</span> łatwo rozbudować o kolejne piętra / budynki; porządek</p>
+      <p><span class="bad">−</span> awaria węzła pośredniego odcina całą „gałąź"</p>
+      <p class="muted">sieć w budynku: serwerownia → szafy na piętrach → biurka · telewizja kablowa · struktura firmy</p></div>
+  </div>
+  <aside class="notes">
+    <p><b>W skrócie:</b> gwiazda to dziś <b>najczęstsza</b> topologia sieci lokalnych — praktycznie każda sieć w domu, szkole, biurze. Drzewo to „gwiazda gwiazd" — tak okablowany jest każdy większy budynek.</p>
+    <p><b>Co powiedzieć:</b> „Spójrzcie na sufit / szafę w tej sali — kable z komputerów biegną do jednego switcha. To gwiazda. A ten switch ma kabel do serwerowni — to już drzewo."</p>
+    <p><b>Jeśli zapytają, czemu gwiazda wygrała, skoro ma „pojedynczy punkt awarii":</b> bo switch rzadko się psuje, a łatwo go wymienić; za to awarię jednego kabla łatwo zlokalizować i nie przeszkadza ona innym.</p>
+  </aside>
+</section>
+
+<!-- ================= 17. SIATKA ================= -->
+<section class="slide" id="s-mesh">
+  <div class="kicker">Część 4 · Topologie</div>
+  <h2>Siatka (mesh)</h2>
+  <div class="cols">
+    <div class="card"><canvas class="mini" data-topo="meshf"></canvas>
+      <h3>Siatka pełna</h3><p>każdy z każdym</p>
+      <p>liczba łączy: <b>n · (n − 1) / 2</b></p>
+      <p class="muted">5 węzłów → 10 łączy · 10 → 45 · 100 → 4950 😱</p></div>
+    <div class="card"><canvas class="mini" data-topo="meshp"></canvas>
+      <h3>Siatka częściowa</h3><p>część węzłów ma po kilka łączy — zawsze jest objazd</p>
+      <p><span class="good">+</span> bardzo odporna na awarie</p>
+      <p><span class="bad">−</span> droga i trudna w zarządzaniu</p>
+      <p class="muted">szkielet internetu · sieci operatorów · Wi-Fi mesh w domu · sieci IoT (Zigbee)</p></div>
+  </div>
+  <p>🛣️ Analogia: <b>sieć dróg w kraju</b> — gdy jedna droga jest zamknięta, nawigacja wyznacza objazd.</p>
+  <aside class="notes">
+    <p><b>W skrócie:</b> siatka to topologia „z objazdami". Pełna (każdy z każdym) jest praktycznie nie do zbudowania przy wielu węzłach — liczba kabli rośnie bardzo szybko. Dlatego buduje się siatki częściowe: ważne węzły mają po kilka połączeń.</p>
+    <p><b>Policz z salą:</b> 4 węzły → 4·3/2 = 6 łączy; 6 węzłów → 15; 10 → 45. Wzór: każdy z n węzłów łączy się z (n−1) innymi, dzielimy przez 2, bo każde łącze policzyliśmy dwa razy.</p>
+    <p><b>Ciekawostka:</b> internet (ARPANET) był od początku projektowany jako siatka, żeby przetrwał uszkodzenie części węzłów.</p>
+  </aside>
+</section>
+
+<!-- ================= 18. PORÓWNANIE ================= -->
+<section class="slide" id="s-compare">
+  <div class="kicker">Część 4 · Podsumowanie topologii</div>
+  <h2>Porównanie</h2>
+  <table>
+    <tr><th>Topologia</th><th>Koszt (kable)</th><th>Awaria jednego łącza</th><th>Słaby punkt</th><th>Gdzie spotkasz</th></tr>
+    <tr><td><b>punkt–punkt</b></td><td>1 łącze</td><td class="bad">brak połączenia</td><td>jedyne łącze</td><td>Bluetooth słuchawki–telefon, radiolinia</td></tr>
+    <tr><td><b>magistrala</b></td><td class="good">najmniej</td><td class="bad">pada cała sieć</td><td>wspólny kabel</td><td>CAN w aucie, automatyka</td></tr>
+    <tr><td><b>pierścień</b></td><td class="good">mało</td><td>pojedynczy: pada · podwójny: <span class="good">działa</span></td><td>ciągłość kręgu</td><td>sieci operatorów (SDH)</td></tr>
+    <tr><td><b>gwiazda</b></td><td>średnio</td><td class="good">odpada 1 urządzenie</td><td>węzeł centralny</td><td>LAN w domu i pracowni, Wi-Fi</td></tr>
+    <tr><td><b>drzewo</b></td><td>średnio</td><td>odpada gałąź</td><td>węzły pośrednie</td><td>okablowanie budynków</td></tr>
+    <tr><td><b>siatka</b></td><td class="bad">najwięcej</td><td class="good">objazd — działa</td><td>koszt, złożoność</td><td>internet, sieci operatorów</td></tr>
+  </table>
+  <p class="muted">W praktyce sieci są <b>hybrydowe</b>: gwiazdy w budynkach, połączone drzewem, a operatorzy łączą się siatką.</p>
+  <aside class="notes">
+    <p>Tabelę studenci mogą sfotografować — zawiera całą wiedzę o topologiach potrzebną na kolokwium.</p>
+    <p><b>Topologia hybrydowa</b> = połączenie kilku topologii. Każda prawdziwa duża sieć jest hybrydowa.</p>
+  </aside>
+</section>
+
+<!-- ================= 19. JAKA TO TOPOLOGIA ================= -->
+<section class="slide" id="s-guess">
+  <div class="kicker">Część 4 · Sprawdź się</div>
+  <h2>Jaka to topologia? <span class="muted">(kliknij)</span></h2>
+  <div class="cols">
+    <div>
+      <details><summary>🖥️ Pracownia: 20 komputerów, każdy kablem do jednego switcha</summary><p>gwiazda</p></details>
+      <details><summary>🏢 Budynek: serwerownia → switch na każdym piętrze → komputery</summary><p>drzewo (gwiazda rozszerzona)</p></details>
+      <details><summary>🚗 Samochód: sterowniki silnika, ABS, poduszek na wspólnej parze przewodów</summary><p>magistrala (CAN)</p></details>
+      <details><summary>🎧 Słuchawki Bluetooth połączone z telefonem</summary><p>punkt–punkt</p></details>
+    </div>
+    <div>
+      <details><summary>🌐 Routery operatorów w różnych miastach, każdy z kilkoma połączeniami</summary><p>siatka częściowa</p></details>
+      <details><summary>🏙️ Światłowód operatora obiega miasto i wraca do punktu startu</summary><p>pierścień</p></details>
+      <details><summary>📶 Trzy punkty Wi-Fi mesh w domu, połączone każdy z każdym</summary><p>siatka pełna</p></details>
+      <details><summary>📺 Telewizja kablowa: stacja czołowa → osiedla → bloki → mieszkania</summary><p>drzewo</p></details>
+    </div>
+  </div>
+  <aside class="notes"><p>Czytaj opis, daj salom 5 sekund na zgadnięcie (mogą pokazać palcami: 1 = gwiazda, 2 = magistrala, …), potem kliknij. Szybka aktywizacja przed końcówką.</p></aside>
+</section>
+
+<!-- ================= 20. TRACEROUTE ================= -->
+<section class="slide" id="s-trace">
+  <div class="kicker">Na żywo · podróż pakietu przez węzły</div>
+  <h2>Ile węzłów dzieli mnie od serwera? — traceroute</h2>
+  <div class="ctrl">
+    <button class="primary" id="tr-step">▶ następny krok</button>
+    <button id="tr-reset">↺ od nowa</button>
+    <span class="info">TTL = „licznik życia" pakietu — każdy router zmniejsza go o 1; przy 0 pakiet ginie, a router odsyła wiadomość „to ja!"</span>
+  </div>
+  <canvas class="viz" id="cv-trace" style="height:30vh"></canvas>
+  <div class="cols">
+    <div class="term" id="tr-out"></div>
+    <div class="card">
+      <h3>Spróbuj sam</h3>
+      <p>Windows (wiersz polecenia):</p><p class="mono tag">tracert google.com</p>
+      <p>macOS / Linux (terminal):</p><p class="mono tag">traceroute google.com</p>
+      <p class="muted">wiersz = jeden węzeł (router) · 3 czasy = 3 próby · <span class="mono">* * *</span> = węzeł nie odpowiada (to normalne)</p>
+    </div>
+  </div>
+  <aside class="notes">
+    <p><b>W skrócie:</b> traceroute pokazuje kolejne <b>węzły</b> (routery) na drodze do serwera. Sztuczka: wysyła pakiety z licznikiem TTL = 1, 2, 3… Pakiet z TTL = 1 „umiera" na pierwszym routerze, który odsyła komunikat o błędzie — i w ten sposób się „przedstawia". Pakiet z TTL = 2 dociera o jeden węzeł dalej itd.</p>
+    <p><b>Co kliknąć:</b> „następny krok" kilka razy — animacja pokazuje pakiety ginące coraz dalej, a po lewej rośnie wynik (przykładowy, schematyczny).</p>
+    <p><b>Pokaz na żywo (jeśli jest internet):</b> Windows: klawisz Windows → wpisz <span class="mono">cmd</span> → Enter → <span class="mono">tracert google.com</span>. Mac: Terminal → <span class="mono">traceroute google.com</span>. Wynik pojawia się przez 10–30 s. Pierwszy wiersz to zwykle router w budynku (adres 192.168… lub 10…), dalej węzły operatora uczelni, na końcu serwer. Zwykle 8–15 węzłów.</p>
+    <p><b>Jeśli wyskoczą gwiazdki * * *:</b> niektóre routery celowo nie odpowiadają (bezpieczeństwo) — to nie awaria. Jeśli cały wynik to gwiazdki, sieć uczelni blokuje traceroute — wtedy wystarczy animacja.</p>
+    <p><b>Czasy w ms</b> = opóźnienie tam i z powrotem do danego węzła (nawiązanie do slajdu o parametrach łącza).</p>
+  </aside>
+</section>
+
+<!-- ================= 21. ŚCIĄGA ================= -->
+<section class="slide" id="s-summary">
+  <div class="kicker">Podsumowanie</div>
+  <h2>Ściąga</h2>
+  <table>
+    <tr><th>Pojęcie</th><th>Definicja w jednym zdaniu</th><th>🛣️ Analogia drogowa</th><th>Przykład</th></tr>
+    <tr><td><b>tor</b></td><td>fizyczne medium prowadzące sygnał</td><td>asfalt, sama droga</td><td>skrętka, światłowód, przestrzeń radiowa</td></tr>
+    <tr><td><b>kanał</b></td><td>droga sygnału z A do B w jednym kierunku</td><td>jeden pas w jedną stronę</td><td>kanał radiowy, szczelina czasowa</td></tr>
+    <tr><td><b>łącze</b></td><td>dwa kanały przeciwnych kierunków między dwoma punktami</td><td>para pasów tam i z powrotem</td><td>łącze abonenckie, łącze 300 Mb/s</td></tr>
+    <tr><td><b>węzeł</b></td><td>punkt, w którym zbiegają się łącza i zapada decyzja „dokąd dalej"</td><td>skrzyżowanie, dworzec</td><td>router, switch, centrala, komputer</td></tr>
+    <tr><td><b>topologia</b></td><td>sposób połączenia węzłów łączami</td><td>mapa dróg</td><td>gwiazda, magistrala, pierścień, drzewo, siatka</td></tr>
+    <tr><td><b>multipleksacja</b></td><td>wiele kanałów w jednym torze</td><td>wiele pasów na jednej drodze</td><td>FDM, TDM, WDM</td></tr>
+  </table>
+  <p class="muted">simpleks — w jedną stronę · półdupleks — na zmianę · dupleks — jednocześnie w obie strony</p>
+  <aside class="notes"><p>Dobry moment na pytania. Tabela = materiał na kolokwium.</p></aside>
+</section>
+
+<!-- ================= 22. QUIZ ================= -->
+<section class="slide" id="s-quiz">
+  <div class="kicker">Sprawdź się</div>
+  <h2>Szybki quiz <span class="muted">(kliknij, by zobaczyć odpowiedź)</span></h2>
+  <div class="cols">
+    <div>
+      <details><summary>1. Czym różni się kanał od łącza?</summary><p>Kanał — jeden kierunek (A→B); łącze — dwa kanały w przeciwnych kierunkach</p></details>
+      <details><summary>2. Krótkofalówka to simpleks, półdupleks czy dupleks?</summary><p>Półdupleks — w obie strony, ale na zmianę („odbiór!")</p></details>
+      <details><summary>3. W gwieździe psuje się switch centralny. Co się dzieje?</summary><p>Cała sieć przestaje działać — to pojedynczy punkt awarii</p></details>
+      <details><summary>4. Ile łączy ma siatka pełna z 6 węzłami?</summary><p>6 · 5 / 2 = 15</p></details>
+    </div>
+    <div>
+      <details><summary>5. Router to węzeł końcowy czy pośredniczący?</summary><p>Pośredniczący — kieruje ruchem między sieciami</p></details>
+      <details><summary>6. Jak przesłać wiele kanałów jednym światłowodem?</summary><p>Multipleksacja — w światłowodzie WDM: każdy kanał innym „kolorem" światła</p></details>
+      <details><summary>7. Co skraca czas pobierania dużego pliku: większa przepływność czy mniejsze opóźnienie?</summary><p>Większa przepływność (opóźnienie liczy się przy małych porcjach danych i rozmowach)</p></details>
+      <details><summary>8. Czy powietrze między telefonem a stacją bazową to tor?</summary><p>Tak — tor radiowy</p></details>
+    </div>
+  </div>
+  <aside class="notes"><p>Pytania 1, 3, 4 i 5 dobrze nadają się na kolokwium.</p></aside>
+</section>
+
+<!-- ================= 23. NARZĘDZIA ================= -->
+<section class="slide" id="s-tools">
+  <div class="kicker">Do samodzielnej pracy</div>
+  <h2>Pobaw się sam(a)</h2>
+  <div class="cols">
+    <div class="card"><h3>🧩 Cisco Packet Tracer <span class="tag">bezpłatny po rejestracji</span></h3>
+      <p>symulator sieci: budujesz topologię z routerów, switchy i komputerów, wysyłasz pakiety i patrzysz, którędy idą</p>
+      <p class="muted">konto w Cisco Networking Academy · przyda się w projekcie (konfiguracja LAN/WAN)</p></div>
+    <div class="card"><h3>🧭 traceroute / tracert</h3>
+      <p>sprawdź, przez ile węzłów przechodzą Twoje dane do różnych serwisów — np. polskiego i amerykańskiego</p></div>
+    <div class="card"><h3>🏠 Twoja sieć domowa</h3>
+      <p>narysuj jej topologię: router, urządzenia przewodowe i Wi-Fi. Jaka to topologia?</p></div>
+    <div class="card"><h3>📶 Ustawienia Wi-Fi</h3>
+      <p>w panelu routera sprawdź, na którym <b>kanale</b> działa Twoja sieć i ile sieci sąsiadów jest na tym samym</p></div>
+  </div>
+  <aside class="notes"><p>Zadanie „narysuj topologię swojej sieci domowej" to dobra, krótka praca domowa — można ją omówić na początku następnych zajęć.</p></aside>
+</section>
+
+<!-- ================= SŁOWNICZEK DLA PROWADZĄCEJ (G) ================= -->
+<div id="gloss">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:1em">
+    <h2>Słowniczek dla prowadzącej</h2>
+    <div><button id="gl-print">🖨 drukuj</button> <button id="gl-close">✕ zamknij (G)</button></div>
+  </div>
+  <div id="gl-body">
+  <p><b>Myśl przewodnia:</b> sieć telekomunikacyjna to sieć dróg. Tor = droga (asfalt), kanał = jeden pas w jedną stronę, łącze = para pasów tam i z powrotem, węzeł = skrzyżowanie / dworzec, topologia = mapa.</p>
+  <table>
+    <tr><th>Pojęcie</th><th>Co to jest</th><th>Jak to powiedzieć prosto</th></tr>
+    <tr><td><b>system telekomunikacyjny</b></td><td>źródło → nadajnik → kanał (z zakłóceniami) → odbiornik → odbiorca</td><td>ktoś nadaje, coś przenosi, ktoś odbiera — a po drodze przeszkadza szum</td></tr>
+    <tr><td><b>tor (transmisyjny)</b></td><td>fizyczne, bierne środowisko, w którym biegnie sygnał: para przewodów, kabel koncentryczny, światłowód, przestrzeń radiowa</td><td>„po czym" płynie sygnał</td></tr>
+    <tr><td><b>kanał</b></td><td>zespół środków technicznych (tor + urządzenia) do przesyłania sygnału z A do B w jednym kierunku; na jednym torze może być wiele kanałów</td><td>„którędy i w którą stronę"</td></tr>
+    <tr><td><b>łącze</b></td><td>zwykle dwa kanały przeciwnych kierunków między dwoma punktami; realizuje konkretną usługę (np. rozmowę, dostęp do internetu)</td><td>droga tam i z powrotem</td></tr>
+    <tr><td><b>węzeł</b></td><td>punkt sieci, w którym zbiegają się łącza; końcowy (komputer, telefon) lub pośredniczący (switch, router, centrala)</td><td>skrzyżowanie, gdzie się decyduje, dokąd dalej</td></tr>
+    <tr><td><b>topologia</b></td><td>sposób połączenia węzłów łączami; fizyczna (kable) i logiczna (przepływ danych)</td><td>mapa sieci</td></tr>
+    <tr><td><b>multipleksacja</b></td><td>przesyłanie wielu kanałów jednym torem: FDM (częstotliwość), TDM (czas), WDM (kolor światła)</td><td>wiele pasów na jednej drodze</td></tr>
+    <tr><td><b>simpleks / półdupleks / dupleks</b></td><td>transmisja: tylko w jedną stronę / w obie na zmianę / w obie jednocześnie</td><td>radio FM / krótkofalówka / telefon</td></tr>
+    <tr><td><b>przepływność</b></td><td>ilość danych na sekundę [b/s, Mb/s, Gb/s]</td><td>szerokość autostrady</td></tr>
+    <tr><td><b>opóźnienie</b></td><td>czas podróży sygnału [ms]; zależy od odległości; „ping" = tam i z powrotem</td><td>długość trasy</td></tr>
+  </table>
+  <h3>Typowe pytania studentów</h3>
+  <ul>
+    <li><b>Switch a router?</b> Switch łączy urządzenia w jednej sieci lokalnej (po adresach MAC). Router łączy różne sieci, np. dom z internetem (po adresach IP). Domowy „router" = modem + router + switch + Wi-Fi w jednym pudełku.</li>
+    <li><b>b a B?</b> b = bit, B = bajt = 8 bitów. Łącze 100 Mb/s pobiera ok. 12,5 MB na sekundę.</li>
+    <li><b>Czy Wi-Fi to tor?</b> Tor radiowy — przestrzeń między antenami.</li>
+    <li><b>Hub a switch?</b> Hub (koncentrator, dziś przestarzały) rozsyła wszystko do wszystkich — logicznie działa jak magistrala. Switch wysyła dane tylko do adresata.</li>
+    <li><b>Dlaczego magistrala pada po przecięciu kabla?</b> Sygnał odbija się od niezakończonego końca kabla i zakłóca transmisję (stąd terminatory na końcach).</li>
+  </ul>
+  <h3>Uwaga na zamieszanie pojęciowe</h3>
+  <p>Definicje toru, kanału i łącza różnią się nieco między podręcznikami, a w mowie potocznej słowa te są używane zamiennie („łącze internetowe", „kanał Wi-Fi"). Na wykładzie stosujemy klasyczną konwencję (m.in. Encyklopedia PWN): tor = medium fizyczne, kanał = jeden kierunek, łącze = oba kierunki. Jeśli student przytoczy inną definicję — to nie błąd, tylko inna konwencja.</p>
+  </div>
+</div>
+
+<div id="notes"></div>
+<div id="bar">
+  <button id="b-prev" title="poprzedni">◀</button>
+  <button id="b-next" title="następny">▶</button>
+  <div id="prog"><div></div></div>
+  <span id="cnt"></span>
+  <button id="b-gloss" title="słowniczek (G)">📖</button>
+  <button id="b-notes" title="notatki (N)">📝</button>
+  <button id="b-spk" title="okno prowadzącej (S)">🗔</button>
+  <button id="b-theme" title="motyw (T)">◐</button>
+  <button id="b-fs" title="pełny ekran (F)">⛶</button>
+</div>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const TAU=Math.PI*2;
+const pl=(x,d)=>x.toFixed(d).replace('.',',');
+const PAL=['#1f6fd1','#e2741d','#1f9a5a','#d23b3b','#7a4cc9','#c49a00','#0aa3a3','#d14fa0'];
+
+/* ---------------- motyw / kolory ---------------- */
+try{const t=localStorage.getItem('tele-theme'); if(t) document.documentElement.dataset.theme=t;}catch(e){}
+function toggleTheme(){const r=document.documentElement; r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';
+  try{localStorage.setItem('tele-theme',r.dataset.theme)}catch(e){}}
+let C={};
+function readColors(){const s=getComputedStyle(document.documentElement);
+  for(const k of ['bg','panel','fg','muted','grid','accent','accent2','accent3','danger','violet','chip']) C[k]=s.getPropertyValue('--'+k).trim();}
+
+/* ---------------- rysowanie ---------------- */
+function fit(c){
+  const r=c.getBoundingClientRect(), d=window.devicePixelRatio||1;
+  const w=Math.max(1,Math.round(r.width*d)), h=Math.max(1,Math.round(r.height*d));
+  if(c.width!==w||c.height!==h){c.width=w;c.height=h;}
+  const g=c.getContext('2d'); g.setTransform(d,0,0,d,0,0); g.clearRect(0,0,r.width,r.height);
+  return {g,w:r.width,h:r.height};
+}
+const FONT='system-ui,-apple-system,"Segoe UI",sans-serif';
+function text(g,s,x,y,col,size=16,align='left',weight=600){ g.fillStyle=col; g.font=`${weight} ${size}px ${FONT}`; g.textAlign=align; g.textBaseline='middle'; g.fillText(s,x,y); }
+function label(g,s,x,y,col,size=15,align='center'){ g.font=`600 ${size}px ${FONT}`; const tw=g.measureText(s).width, x0=align==='right'?x-tw:align==='center'?x-tw/2:x;
+  g.fillStyle=C.panel; g.globalAlpha=.92; g.fillRect(x0-6,y-size*0.75,tw+12,size*1.5); g.globalAlpha=1; text(g,s,x,y,col,size,align); }
+function emoji(g,s,x,y,size){ g.font=`${size}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; g.textAlign='center'; g.textBaseline='middle'; g.fillStyle=C.fg; g.fillText(s,x,y); }
+function dot(g,x,y,r,col){ g.beginPath(); g.arc(x,y,r,0,TAU); g.fillStyle=col; g.fill(); }
+function line(g,x1,y1,x2,y2,col,lw=2,dash=null,off=0){ g.strokeStyle=col; g.lineWidth=lw; g.setLineDash(dash||[]); g.lineDashOffset=off; g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke(); g.setLineDash([]); g.lineDashOffset=0; }
+function arrowHead(g,x,y,ang,col,s=11){ g.fillStyle=col; g.beginPath(); g.moveTo(x,y); g.lineTo(x-s*Math.cos(ang-0.45),y-s*Math.sin(ang-0.45)); g.lineTo(x-s*Math.cos(ang+0.45),y-s*Math.sin(ang+0.45)); g.closePath(); g.fill(); }
+function rrect(g,x,y,w,h,r,fill,stroke,lw=2){ g.beginPath(); g.roundRect?g.roundRect(x,y,w,h,r):g.rect(x,y,w,h); if(fill){g.fillStyle=fill; g.fill();} if(stroke){g.strokeStyle=stroke; g.lineWidth=lw; g.stroke();} }
+function glow(g,fn,col,lw){ g.save(); g.globalAlpha=.28; g.strokeStyle=col; g.lineWidth=lw; g.lineCap='round'; fn(); g.restore(); }
+function rng(seed){let a=seed>>>0; return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+// grupa przycisków wyboru
+function choice(sel,attr,init,onChange){ const bs=$$(sel); const set=v=>{bs.forEach(b=>b.classList.toggle('sel',b.dataset[attr]===v)); onChange(v);}; bs.forEach(b=>b.addEventListener('click',()=>set(b.dataset[attr]))); set(init); }
+
+const frame={}; let NOW=0;
+
+/* ===== 4. model systemu ===== */
+const MD={pk:[],t0:0,rx:[]};
+const mdNoise=()=>+$('#md-noise').value/100;
+$('#md-noise').addEventListener('input',()=>$('#md-nv').textContent=$('#md-noise').value+'%'); $('#md-nv').textContent=$('#md-noise').value+'%';
+$('#md-send').addEventListener('click',()=>{
+  const msg=$('#md-msg').value.slice(0,60), p=mdNoise(), junk='abcdefghijklmnoprstuwyz#%&?@*';
+  MD.pk=[...msg].map((ch,i)=>{const bad=Math.random()<p; return {ch,i,start:NOW+i*0.09,bad,rep:bad?junk[Math.floor(Math.random()*junk.length)]:ch};});
+  MD.rx=new Array(MD.pk.length).fill(null); $('#md-out').innerHTML='';
+});
+function mdOut(){ $('#md-out').innerHTML=MD.rx.map(r=>r===null?'':r.bad?`<span style="color:var(--danger);font-weight:800">${r.rep===' '?'␣':r.rep}</span>`:(r.ch===' '?' ':r.ch)).join(''); }
+frame['s-model']=t=>{
+  const {g,w,h}=fit($('#cv-model'));
+  const cy=h*0.45, xs=[0.07,0.22,0.5,0.78,0.93].map(f=>f*w);
+  const names=[['🧑','źródło'],['📟','nadajnik'],['',''],['📟','odbiornik'],['👩','odbiorca']];
+  // kanał
+  const kx1=xs[1]+45, kx2=xs[3]-45;
+  rrect(g,kx1,cy-28,kx2-kx1,56,14,C.chip,C.grid,1.5);
+  text(g,'KANAŁ',(kx1+kx2)/2,cy+46,C.muted,15,'center',700);
+  // zakłócenia
+  const p=mdNoise(), R=rng(Math.floor(t*6));
+  const nb=Math.round(p*30);
+  for(let i=0;i<nb;i++) emoji(g,'⚡',kx1+20+R()*(kx2-kx1-40),cy-40-R()*25,14+R()*8);
+  text(g,'zakłócenia',(kx1+kx2)/2,cy-78,p>0?C.danger:C.muted,14,'center',700);
+  names.forEach(([e,n],i)=>{ if(!n) return; rrect(g,xs[i]-40,cy-34,80,68,14,C.panel,i===0||i===4?C.accent:C.accent2,2); emoji(g,e,xs[i],cy-4,30); text(g,n,xs[i],cy+48,C.fg,15,'center',700); });
+  line(g,xs[0]+40,cy,xs[1]-40,cy,C.muted,2); arrowHead(g,xs[1]-40,cy,0,C.muted);
+  line(g,xs[3]+40,cy,xs[4]-40,cy,C.muted,2); arrowHead(g,xs[4]-40,cy,0,C.muted);
+  // pakiety-litery
+  const dur=1.8; let changed=false;
+  for(const k of MD.pk){
+    const f=(t-k.start)/dur; if(f<0) continue;
+    if(f>=1){ if(MD.rx[k.i]===null){MD.rx[k.i]=k; changed=true;} continue; }
+    const x=kx1+(kx2-kx1)*f, y=cy+Math.sin(k.i*1.7)*8, show=(k.bad&&f>0.5)?k.rep:k.ch;
+    rrect(g,x-11,y-13,22,26,5,(k.bad&&f>0.5)?C.danger:C.accent,null); text(g,show===' '?'␣':show,x,y+1,'#fff',15,'center',800);
+  }
+  if(changed) mdOut();
+};
+
+/* ===== 5. mapa połączenia ===== */
+const MAPD={
+  none:'Ania (A) dzwoni do Bartka (B). Wybierz pojęcie, by zobaczyć je na schemacie.',
+  tor:'<b>TOR</b> — fizyczne medium: para przewodów miedzianych od domu do centrali i światłowód między centralami. To „asfalt" — sama droga.',
+  kanal:'<b>KANAŁ</b> — droga sygnału <b>od A do B, w jednym kierunku</b>. W światłowodzie biegnie wiele kanałów innych rozmów — jeden tor, wiele kanałów.',
+  lacze:'<b>ŁĄCZE</b> — kanał A→B + kanał B→A. Dopiero łącze pozwala rozmawiać w obie strony. Tu: łącze abonenckie, międzycentralowe, abonenckie.',
+  wezel:'<b>WĘZŁY</b> — centrale (pośredniczące: decydują, dokąd dalej) oraz telefony (końcowe: tu zaczyna się i kończy rozmowa).',
+  all:'Wszystko naraz: <b>tor</b> (pomarańczowy) niesie <b>kanały</b> (strzałki), para kanałów tworzy <b>łącze</b>, a łącza spotykają się w <b>węzłach</b>.'
+};
+let mapMode='none';
+choice('#s-map [data-show]','show','none',v=>{mapMode=v; $('#map-desc').innerHTML=MAPD[v];});
+frame['s-map']=t=>{
+  const {g,w,h}=fit($('#cv-map')); const m=mapMode, all=m==='all';
+  const cy=h*0.52, xA=w*0.08, x1=w*0.33, x2=w*0.67, xB=w*0.92, cw=Math.min(110,w*0.09), ch=70;
+  const segs=[[xA+28,x1-cw/2],[x1+cw/2,x2-cw/2],[x2+cw/2,xB-28]];
+  const cop='#b87333';
+  // tory
+  if(m==='tor'||all){ glow(g,()=>{segs.forEach(([a,b])=>{g.beginPath();g.moveTo(a,cy);g.lineTo(b,cy);g.stroke();});},C.accent2,34); }
+  [0,2].forEach(i=>{const [a,b]=segs[i]; line(g,a,cy-4,b,cy-4,cop,2.5); line(g,a,cy+4,b,cy+4,cop,2.5);});
+  { const [a,b]=segs[1]; rrect(g,a,cy-14,b-a,28,14,C.chip,C.grid,1.5);
+    const show=m==='kanal'||m==='lacze'||all;
+    for(let k=0;k<7;k++){const y=cy-9+k*3; line(g,a+6,y,b-6,y,show?C.muted:C.grid,1,show?[6,5]:null,-t*30);} }
+  if(m==='tor'||all){ label(g,'TOR: para przewodów',(segs[0][0]+segs[0][1])/2,cy+76,C.accent2,14); label(g,'TOR: światłowód',(segs[1][0]+segs[1][1])/2,cy+76,C.accent2,14); label(g,'TOR: para przewodów',(segs[2][0]+segs[2][1])/2,cy+76,C.accent2,14); }
+  // kanały
+  const flow=(y,dir,col)=>{ const xs=dir>0?[xA+28,xB-28]:[xB-28,xA+28];
+    line(g,xs[0],y,xs[1],y,col,3.5,[14,10],-dir*t*60*(dir>0?1:-1)); arrowHead(g,xs[1],y,dir>0?0:Math.PI,col,13); };
+  if(m==='kanal'||m==='lacze'||all){ flow(cy-26,1,C.accent); label(g,'kanał A → B',w*0.5,cy-44,C.accent,15); }
+  if(m==='lacze'||all){ flow(cy+26,-1,C.accent3); label(g,'kanał B → A',w*0.5,cy+50,C.accent3,15); }
+  if(m==='lacze'||all){ const by=cy-ch/2-34; [[xA,x1,'łącze abonenckie'],[x1,x2,'łącze międzycentralowe'],[x2,xB,'łącze abonenckie']].forEach(([a,b,s])=>{
+      g.strokeStyle=C.violet; g.lineWidth=2; g.beginPath(); g.moveTo(a+6,by+8); g.lineTo(a+6,by); g.lineTo(b-6,by); g.lineTo(b-6,by+8); g.stroke(); label(g,s,(a+b)/2,by-12,C.violet,14);}); }
+  // węzły
+  if(m==='wezel'||all){ [x1,x2].forEach(x=>{dot(g,x,cy,ch*0.95,C.accent2+'33');}); [xA,xB].forEach(x=>dot(g,x,cy,40,C.accent+'33')); }
+  [x1,x2].forEach((x,i)=>{ rrect(g,x-cw/2,cy-ch/2,cw,ch,12,C.panel,C.muted,2); emoji(g,'🏢',x,cy-8,26); text(g,'centrala',x,cy+20,C.fg,13,'center',700); });
+  [[xA,'A'],[xB,'B']].forEach(([x,s])=>{ emoji(g,'☎️',x,cy,32); text(g,s==='A'?'Ania (A)':'Bartek (B)',x,cy+42,C.fg,15,'center',700); });
+  if(m==='wezel'||all){ label(g,'węzeł pośredniczący',x1,cy+ch/2+20,C.accent2,14); label(g,'węzeł pośredniczący',x2,cy+ch/2+20,C.accent2,14);
+    label(g,'węzeł końcowy',xA,cy-52,C.accent,14); label(g,'węzeł końcowy',xB,cy-52,C.accent,14); }
+};
+
+/* ===== 9. simpleks / dupleks ===== */
+const DX={mode:'half',a:false,b:false};
+const DXI={
+  simplex:'<b>Simpleks</b> 📻 — tylko w jedną stronę (A → B), zawsze. Radio FM, telewizja: odbiornik nie może nic odesłać. 🛣️ ulica jednokierunkowa.',
+  half:'<b>Półdupleks</b> 📟 — w obie strony, ale <b>na zmianę</b>. Krótkofalówka: „…odbiór!". Gdy nadają oboje naraz — <b>kolizja</b>. 🛣️ wąski most z ruchem wahadłowym.',
+  full:'<b>Dupleks</b> 📞 — w obie strony <b>jednocześnie</b>: dwa osobne kanały = <b>łącze</b>. Telefon, rozmowa wideo. 🛣️ droga dwukierunkowa.'
+};
+function dxUpd(){ $('#dx-a').classList.toggle('on',DX.a); $('#dx-b').classList.toggle('on',DX.b); $('#dx-b').disabled=DX.mode==='simplex'; $('#dx-info').innerHTML=DXI[DX.mode]; }
+choice('#s-duplex [data-dx]','dx','half',v=>{DX.mode=v; if(v==='simplex') DX.b=false; dxUpd();});
+$('#dx-a').addEventListener('click',()=>{DX.a=!DX.a; dxUpd();});
+$('#dx-b').addEventListener('click',()=>{DX.b=!DX.b; dxUpd();});
+frame['s-duplex']=t=>{
+  const {g,w,h}=fit($('#cv-duplex')); const cy=h*0.5, xa=w*0.1, xb=w*0.9, x1=xa+60, x2=xb-60, full=DX.mode==='full';
+  emoji(g,'👩',xa,cy-10,54); text(g,'A',xa,cy+40,C.fg,18,'center',800);
+  emoji(g,'🧑',xb,cy-10,54); text(g,'B',xb,cy+40,C.fg,18,'center',800);
+  const lanes=full?[cy-22,cy+22]:[cy];
+  lanes.forEach(y=>rrect(g,x1,y-12,x2-x1,24,12,C.chip,C.grid,1));
+  if(full){ text(g,'kanał A → B',(x1+x2)/2,cy-48,C.accent,14,'center',700); text(g,'kanał B → A',(x1+x2)/2,cy+50,C.accent3,14,'center',700); }
+  const coll=DX.mode==='half'&&DX.a&&DX.b, sp=120, gap=34, L=x2-x1;
+  const stream=(y,dir,col,limit)=>{ for(let k=0;k<40;k++){ const d=((t*sp)+k*gap)%(L+gap); if(d>L) continue; if(limit&&d>limit) continue;
+      const x=dir>0?x1+d:x2-d; dot(g,x,y,6,col);} };
+  if(DX.a) stream(lanes[0],1,C.accent,coll?L/2:0);
+  if(DX.b&&DX.mode!=='simplex') stream(full?lanes[1]:lanes[0],-1,C.accent3,coll?L/2:0);
+  if(coll){ const R=rng(Math.floor(t*12)); for(let i=0;i<10;i++){const a=R()*TAU, r=8+R()*26; dot(g,(x1+x2)/2+Math.cos(a)*r,cy+Math.sin(a)*r,4,C.danger);} label(g,'💥 KOLIZJA — nikt nic nie rozumie',(x1+x2)/2,cy-46,C.danger,18); }
+  if(DX.mode==='simplex') label(g,'B może tylko słuchać',xb,cy+66,C.muted,14);
+  if(!DX.a&&!(DX.b&&DX.mode!=='simplex')) label(g,'kliknij „A nadaje" / „B nadaje"',(x1+x2)/2,cy+(full?0:-40),C.muted,15);
+};
+
+/* ===== 10. multipleksacja ===== */
+let MX='fdm';
+const mxN=()=>+$('#mx-n').value;
+function mxInfo(){ const n=mxN(); $('#mx-nv').textContent=n;
+  const per=pl(100/n,n===3||n===6||n===7?1:(100/n)%1?1:0);
+  $('#mx-info').innerHTML= MX==='fdm'?`<b>FDM</b> — każda rozmowa ma <b>swoją częstotliwość</b> i nadaje <b>cały czas</b> (jak stacje radiowe). Tor 100 Mb/s → każdy kanał ok. <b>${per} Mb/s</b>.`
+    : MX==='tdm'?`<b>TDM</b> — wszyscy na tej samej częstotliwości, ale <b>na zmianę</b>, w krótkich szczelinach czasu (tysiące razy na sekundę). Tor 100 Mb/s → każdy kanał ok. <b>${per} Mb/s</b>.`
+    : `<b>WDM</b> — w światłowodzie każda rozmowa to <b>inny kolor światła</b>. Np. ${n} kolorów × 100 Gb/s = <b>${n*100} Gb/s</b> w jednym włóknie (w praktyce nawet 80+ kolorów).`; }
+choice('#s-mux [data-mx]','mx','fdm',v=>{MX=v; mxInfo();});
+$('#mx-n').addEventListener('input',mxInfo); mxInfo();
+const wl=i=>`hsl(${Math.round(i*270/8)} 85% 55%)`;
+frame['s-mux']=t=>{
+  const {g,w,h}=fit($('#cv-mux')); const n=mxN(), xs=w*0.07, xm=w*0.24, xd=w*0.76, xr=w*0.93, top=30, bot=h-30;
+  const ys=i=>top+(bot-top)*(i+0.5)/n, col=i=>MX==='wdm'?wl(i):PAL[i];
+  const pipeH=Math.min(110,(bot-top)*0.5), py=h/2-pipeH/2;
+  // tor
+  rrect(g,xm+30,py,xd-xm-60,pipeH,pipeH/2,MX==='wdm'?'#0b0f18':C.chip,C.grid,2);
+  text(g,MX==='wdm'?'jeden światłowód (tor)':'jeden tor (kabel)',w/2,py-16,C.muted,15,'center',700);
+  // źródła i odbiorcy
+  const slot=Math.floor(t*2.2)%n;
+  for(let i=0;i<n;i++){ const y=ys(i), active=MX!=='tdm'||i===slot;
+    line(g,xs+18,y,xm-10,h/2,col(i),active?3:1.5,active?null:[4,4]); line(g,xd+10,h/2,xr-18,y,col(i),active?3:1.5,active?null:[4,4]);
+    dot(g,xs,y,16,col(i)); text(g,String(i+1),xs,y+1,'#fff',15,'center',800); dot(g,xr,y,16,col(i)); text(g,String(i+1),xr,y+1,'#fff',15,'center',800); }
+  rrect(g,xm-14,h/2-34,58,68,10,C.panel,C.fg,2); text(g,'MUX',xm+15,h/2,C.fg,14,'center',800);
+  rrect(g,xd-44,h/2-34,58,68,10,C.panel,C.fg,2); text(g,'DEMUX',xd-15,h/2,C.fg,12,'center',800);
+  const a=xm+50, b=xd-50;
+  if(MX==='fdm'||MX==='wdm'){
+    for(let i=0;i<n;i++){ const y=py+pipeH*(i+0.5)/n; line(g,a,y,b,y,col(i),Math.max(2,pipeH/n*0.55),[18,10],-t*70); }
+    if(MX==='fdm'){ text(g,'↑ częstotliwość',a-4,py-16,C.muted,13,'left',600); }
+  } else {
+    const bw=40, sp=90, off=(t*sp)%bw; g.save(); g.beginPath(); g.rect(a,py,b-a,pipeH); g.clip();
+    for(let k=-1;k*bw<b-a+bw;k++){ const x=a+k*bw+off, idx=((Math.floor(t*sp/bw)-k)%n+n)%n; rrect(g,x+3,py+pipeH*0.2,bw-6,pipeH*0.6,6,PAL[idx],null); text(g,String(idx+1),x+bw/2,h/2,'#fff',14,'center',800);} g.restore();
+    text(g,'czas →',b,py+pipeH+16,C.muted,13,'right',600);
+  }
+};
+
+/* ===== 12. parametry łącza ===== */
+const logV=(v,a,b)=>a*Math.pow(b/a,v/1000), invLog=(x,a,b)=>Math.round(1000*Math.log(x/a)/Math.log(b/a));
+const PR={size:[1e3,1e10],rate:[56e3,1e10],dist:[10,1e8]};
+const fmtB=b=>b>=1e9?pl(b/1e9,b>=1e10?0:1)+' GB':b>=1e6?pl(b/1e6,b>=1e7?0:1)+' MB':pl(b/1e3,0)+' kB';
+const fmtR=r=>r>=1e9?pl(r/1e9,r>=1e10?0:1)+' Gb/s':r>=1e6?pl(r/1e6,r>=1e7?0:1)+' Mb/s':pl(r/1e3,0)+' kb/s';
+const fmtD=d=>d>=1000?Math.round(d/1000).toLocaleString('pl-PL')+' km':Math.round(d)+' m';
+const fmtT=s=>s<1e-3?pl(s*1e6,s<1e-5?1:0)+' µs':s<1?pl(s*1e3,s<0.01?2:s<0.1?1:0)+' ms':s<120?pl(s,s<10?2:1)+' s':s<7200?pl(s/60,1)+' min':pl(s/3600,1)+' h';
+function prVals(){ return {size:logV(+$('#pr-size').value,...PR.size), rate:logV(+$('#pr-rate').value,...PR.rate), dist:logV(+$('#pr-dist').value,...PR.dist), v:+$('#pr-med').value}; }
+function prUpd(){ const p=prVals(); $('#pr-sv').textContent=fmtB(p.size); $('#pr-rv').textContent=fmtR(p.rate); $('#pr-dv').textContent=fmtD(p.dist); }
+['#pr-size','#pr-rate','#pr-dist'].forEach(s=>$(s).addEventListener('input',prUpd)); $('#pr-med').addEventListener('change',prUpd);
+const PRESETS={wifi:[300e6,10,'3e8'],fiber:[1e9,300e3,'2e8'],sat:[50e6,71572e3,'3e8'],modem:[56e3,5e3,'2e8']};
+$$('#s-params [data-pr]').forEach(b=>b.addEventListener('click',()=>{const [r,d,v]=PRESETS[b.dataset.pr]; $('#pr-rate').value=invLog(r,...PR.rate); $('#pr-dist').value=invLog(d,...PR.dist); $('#pr-med').value=v; prUpd();}));
+prUpd();
+frame['s-params']=()=>{
+  const {g,w,h}=fit($('#cv-params')); const p=prVals(), tx=p.size*8/p.rate, pr=p.dist/p.v, tot=tx+pr;
+  const L=Math.min(320,w*0.28), bw=w-L-30, rows=[['📦 wysyłanie pliku (rozmiar ÷ przepływność)',tx,C.accent],['⏱️ podróż sygnału (odległość ÷ prędkość)',pr,C.accent2]];
+  const rh=(h-60)/2, mx=Math.max(tx,pr);
+  rows.forEach(([s,v,col],i)=>{ const y=14+i*rh, bh=rh*0.55; text(g,s,10,y+bh/2,C.fg,Math.min(16,L/22),'left',600);
+    rrect(g,L,y,bw,bh,8,C.chip,null); rrect(g,L,y,Math.max(4,bw*v/mx),bh,8,col,null);
+    label(g,fmtT(v),Math.min(L+bw-50,L+Math.max(4,bw*v/mx)+50),y+bh/2,col,17); });
+  text(g,`RAZEM ≈ ${fmtT(tot)}   ·   ping (tam i z powrotem, bez pliku) ≈ ${fmtT(2*pr)}`,w/2,h-22,C.fg,Math.min(19,w/50),'center',800);
+};
+
+/* ===== 14. topologie ===== */
+function buildTopo(type,n){
+  const N=[], E=[]; const host=(o)=>N.push(Object.assign({kind:'host'},o))-1, sw=(o)=>N.push(Object.assign({kind:'sw'},o))-1;
+  const edge=(a,b,kind='link')=>E.push({a,b,kind});
+  let A=0,B=0,directed=false, cable='';
+  if(type==='p2p'){ A=host({nx:.25,ny:.5}); B=host({nx:.75,ny:.5}); edge(A,B); cable='1 łącze — zawsze tylko 2 węzły'; }
+  else if(type==='bus'){ const taps=[];
+    for(let i=0;i<n;i++){ const x=.08+.84*(i+0.5)/n; taps.push(N.push({kind:'tap',nx:x,ny:.5})-1); }
+    for(let i=0;i<n-1;i++) edge(taps[i],taps[i+1],'bus');
+    const hs=[]; for(let i=0;i<n;i++){ const x=.08+.84*(i+0.5)/n; const hh=host({nx:x,ny:i%2?.8:.2}); hs.push(hh); edge(hh,taps[i],'drop'); }
+    A=hs[0]; B=hs[n-1]; cable=`1 kabel magistrali (${n-1} odcinków) + ${n} odgałęzień`; }
+  else if(type==='ring'||type==='ring2'){ const hs=[]; for(let i=0;i<n;i++) hs.push(host({ang:-Math.PI/2+TAU*i/n}));
+    for(let i=0;i<n;i++) edge(hs[i],hs[(i+1)%n]); directed=type==='ring'; A=hs[0]; B=hs[Math.floor(n/2)]; cable=`${n} łączy`+(type==='ring2'?' (każde podwójne)':''); }
+  else if(type==='star'){ const c=sw({nx:.5,ny:.5,lab:'S'}); const hs=[]; for(let i=0;i<n;i++){const hh=host({ang:-Math.PI/2+TAU*i/n}); hs.push(hh); edge(c,hh);} A=hs[0]; B=hs[Math.floor(n/2)]; cable=`${n} łączy`; }
+  else if(type==='tree'){ const r=sw({nx:.5,ny:.1,lab:'R'}); const k=Math.max(2,Math.ceil(n/3)); const mids=[];
+    for(let j=0;j<k;j++){ const m=sw({nx:(j+0.5)/k,ny:.45,lab:'S'}); mids.push(m); edge(r,m); }
+    const hs=[]; for(let i=0;i<n;i++){ const j=Math.min(k-1,Math.floor(i*k/n)); const hh=host({nx:.04+.92*(i+0.5)/n,ny:.86}); hs.push(hh); edge(mids[j],hh); }
+    A=hs[0]; B=hs[n-1]; cable=`${E.length} łączy`; }
+  else { const hs=[]; for(let i=0;i<n;i++) hs.push(host({ang:-Math.PI/2+TAU*i/n}));
+    const seen=new Set(), add=(a,b)=>{const key=Math.min(a,b)+'-'+Math.max(a,b); if(a!==b&&!seen.has(key)){seen.add(key); edge(hs[a],hs[b]);}};
+    if(type==='meshf'){ for(let i=0;i<n;i++) for(let j=i+1;j<n;j++) add(i,j); cable=`${E.length} łączy = ${n}·${n-1}/2`; }
+    else { for(let i=0;i<n;i++) add(i,(i+1)%n); for(let i=0;i<n;i+=2) add(i,(i+Math.floor(n/2))%n); cable=`${E.length} łączy`; }
+    A=hs[0]; B=hs[Math.floor(n/2)]; }
+  return {type,N,E,A,B,directed,cable,broken:new Set(),failed:new Set(),anim:null,msg:''};
+}
+function topoPos(T,w,h,pad=40){ const R=Math.min(w,h)/2-pad; return T.N.map(nd=>nd.ang!=null?{x:w/2+R*Math.cos(nd.ang),y:h/2+R*Math.sin(nd.ang)}:{x:pad+nd.nx*(w-2*pad),y:pad*0.6+nd.ny*(h-1.2*pad)}); }
+function adjOf(T){ const ad=T.N.map(()=>[]); T.E.forEach((e,i)=>{ if(T.broken.has(i)||T.failed.has(e.a)||T.failed.has(e.b)) return; ad[e.a].push({to:e.b,i}); if(!T.directed) ad[e.b].push({to:e.a,i}); }); return ad; }
+const ringDown=T=>T.type==='ring'&&(T.broken.size>0||T.failed.size>0);
+const busDown=T=>(T.type==='bus'&&T.E.some((e,i)=>e.kind==='bus'&&T.broken.has(i)))||ringDown(T);
+function bfs(T,s){ const ad=adjOf(T), prev=new Array(T.N.length).fill(-1), pe=new Array(T.N.length).fill(-1), seen=new Set([s]), q=[s];
+  while(q.length){ const u=q.shift(); for(const {to,i} of ad[u]) if(!seen.has(to)){seen.add(to); prev[to]=u; pe[to]=i; q.push(to);} } return {seen,prev,pe}; }
+function topoStatus(T){ // zwraca Set hostów w głównej grupie
+  const hosts=T.N.map((nd,i)=>i).filter(i=>T.N[i].kind==='host'&&!T.failed.has(i));
+  if(busDown(T)) return new Set();
+  const reach={}; hosts.forEach(h=>reach[h]=bfs(T,h).seen);
+  let best=[]; const used=new Set();
+  for(const h of hosts){ if(used.has(h)) continue; const grp=hosts.filter(o=>reach[h].has(o)&&reach[o].has(h)); grp.forEach(o=>used.add(o)); if(grp.length>best.length) best=grp; }
+  return new Set(best.length>1?best:[]);
+}
+function drawTopo(g,w,h,T,opt={}){
+  const P=topoPos(T,w,h,opt.mini?22:44), ok=opt.mini?null:topoStatus(T), bd=busDown(T), path=T.anim?T.anim.edges:null;
+  T.E.forEach((e,i)=>{ const a=P[e.a], b=P[e.b], br=T.broken.has(i);
+    let col=e.kind==='bus'?(bd?C.danger:C.accent2):C.muted, lw=e.kind==='bus'?(opt.mini?5:8):(opt.mini?2:3.5);
+    if(path&&path.includes(i)) {col=C.accent; lw+=2;}
+    if(br) line(g,a.x,a.y,b.x,b.y,C.danger,lw,[6,6]); else line(g,a.x,a.y,b.x,b.y,col,lw);
+    if(br) emoji(g,'✂️',(a.x+b.x)/2,(a.y+b.y)/2,opt.mini?12:20);
+    if(T.directed&&!br){ const mx=(a.x+b.x)/2, my=(a.y+b.y)/2; arrowHead(g,mx+(b.x-a.x)*0.06,my+(b.y-a.y)*0.06,Math.atan2(b.y-a.y,b.x-a.x),col,opt.mini?8:12); }
+  });
+  if(T.type==='bus'){ const taps=T.N.map((nd,i)=>i).filter(i=>T.N[i].kind==='tap'); const f=P[taps[0]], l=P[taps[taps.length-1]], s=opt.mini?6:10;
+    [[f,-1],[l,1]].forEach(([p,d])=>{ line(g,p.x,p.y,p.x+d*s*2,p.y,bd?C.danger:C.accent2,opt.mini?5:8); rrect(g,p.x+d*s*2-(d<0?s:0),p.y-s,s,2*s,3,C.fg,null); });
+    if(!opt.mini&&bd) label(g,'⚠ przerwana magistrala: sygnał odbija się od końca kabla — cała sieć nie działa',w/2,h/2+(h*0.15),C.danger,15); }
+  if(!opt.mini&&ringDown(T)) label(g,'⚠ pierścień przerwany — dane nie mogą okrążyć sieci, nikt nie nadaje',w/2,h-18,C.danger,15);
+  T.N.forEach((nd,i)=>{ const p=P[i], fail=T.failed.has(i);
+    if(nd.kind==='tap'){ dot(g,p.x,p.y,opt.mini?3:4,C.accent2); return; }
+    const r=opt.mini?9:17;
+    if(nd.kind==='sw'){ rrect(g,p.x-r,p.y-r,2*r,2*r,5,fail?C.grid:C.accent2,null); text(g,fail?'✖':nd.lab,p.x,p.y+1,'#fff',opt.mini?10:15,'center',800); return; }
+    let col=C.accent; if(!opt.mini) col=fail?C.grid:(ok.has(i)?C.accent3:C.danger);
+    dot(g,p.x,p.y,r,col); if(fail) text(g,'✖',p.x,p.y+1,'#fff',opt.mini?10:16,'center',800);
+    if(!opt.mini&&(i===T.A||i===T.B)) text(g,i===T.A?'A':'B',p.x,p.y+1,'#fff',16,'center',800);
+  });
+  return P;
+}
+let TP=null;
+function tpBuild(){ const type=$('#tp-type').value, n=+$('#tp-n').value; TP=buildTopo(type,n); $('#tp-nv').textContent=type==='p2p'?2:n; $('#tp-n').disabled=type==='p2p'; tpInfo(); }
+function tpInfo(){ const ok=topoStatus(TP), hosts=TP.N.filter((nd,i)=>nd.kind==='host'&&!TP.failed.has(i)).length, tot=TP.N.filter(nd=>nd.kind==='host').length;
+  $('#tp-info').innerHTML=`kable: <b>${TP.cable}</b> · komputerów z łącznością: <b>${ok.size}</b> / ${tot}`+(TP.msg?` · ${TP.msg}`:''); }
+$('#tp-type').addEventListener('change',tpBuild); $('#tp-n').addEventListener('input',tpBuild);
+$('#tp-fix').addEventListener('click',()=>{TP.broken.clear(); TP.failed.clear(); TP.anim=null; TP.msg=''; tpInfo();});
+$('#tp-send').addEventListener('click',()=>{
+  const T=TP; T.anim=null;
+  if(T.failed.has(T.A)||T.failed.has(T.B)||busDown(T)){ T.msg='<span class="bad">❌ pakiet nie dotarł — brak drogi z A do B</span>'; tpInfo(); return; }
+  const {seen,prev,pe}=bfs(T,T.A);
+  if(!seen.has(T.B)){ T.msg='<span class="bad">❌ pakiet nie dotarł — brak drogi z A do B</span>'; tpInfo(); return; }
+  const nodes=[T.B], edges=[]; let u=T.B; while(u!==T.A){ edges.push(pe[u]); u=prev[u]; nodes.push(u);} nodes.reverse(); edges.reverse();
+  T.anim={nodes,edges,start:NOW}; const hops=T.N.length&&nodes.filter(i=>T.N[i].kind!=='tap').length-1;
+  T.msg=`<span class="good">✔ pakiet dotarł</span> (przez ${Math.max(0,nodes.filter(i=>T.N[i].kind!=='tap').length-2)} węzłów pośrednich)`; tpInfo();
+});
+$('#cv-topo').addEventListener('click',e=>{
+  const c=$('#cv-topo'), r=c.getBoundingClientRect(), x=e.clientX-r.left, y=e.clientY-r.top, P=topoPos(TP,r.width,r.height,44);
+  let hit=-1, best=24; TP.N.forEach((nd,i)=>{ if(nd.kind==='tap') return; const d=Math.hypot(P[i].x-x,P[i].y-y); if(d<best){best=d;hit=i;} });
+  if(hit>=0){ if(e.shiftKey&&TP.N[hit].kind==='host'&&hit!==TP.A){TP.B=hit;} else { TP.failed.has(hit)?TP.failed.delete(hit):TP.failed.add(hit);} TP.anim=null; TP.msg=''; tpInfo(); return; }
+  let he=-1, bd=12; TP.E.forEach((ed,i)=>{ const a=P[ed.a], b=P[ed.b], vx=b.x-a.x, vy=b.y-a.y, L2=vx*vx+vy*vy||1, tt=Math.max(0,Math.min(1,((x-a.x)*vx+(y-a.y)*vy)/L2)), d=Math.hypot(a.x+tt*vx-x,a.y+tt*vy-y); if(d<bd){bd=d;he=i;} });
+  if(he>=0){ TP.broken.has(he)?TP.broken.delete(he):TP.broken.add(he); TP.anim=null; TP.msg=''; tpInfo(); }
+});
+tpBuild();
+frame['s-topo']=t=>{
+  const {g,w,h}=fit($('#cv-topo')); const P=drawTopo(g,w,h,TP);
+  if(TP.anim){ const nd=TP.anim.nodes, f=(t-TP.anim.start)/0.35, k=Math.floor(f);
+    if(k<nd.length-1){ const a=P[nd[k]], b=P[nd[k+1]], u=f-k; emoji(g,'✉️',a.x+(b.x-a.x)*u,a.y+(b.y-a.y)*u-2,24); }
+    else if(f<nd.length+3){ const p=P[nd[nd.length-1]]; emoji(g,'✉️',p.x,p.y-30,24); } }
+};
+const MINI={}; ['bus','ring','star','tree','meshf','meshp'].forEach(tp=>MINI[tp]=buildTopo(tp,tp==='meshf'?5:6));
+const drawMinis=()=>$$('.slide.active canvas.mini').forEach(c=>{const {g,w,h}=fit(c); drawTopo(g,w,h,MINI[c.dataset.topo],{mini:true});});
+frame['s-bus-ring']=drawMinis; frame['s-star-tree']=drawMinis; frame['s-mesh']=drawMinis;
+
+/* ===== 20. traceroute ===== */
+const HOPS=[
+  {e:'💻',n:'Twój komputer'},
+  {e:'📶',n:'router w budynku',ip:'192.168.1.1',ms:[1,1,2]},
+  {e:'🏢',n:'operator — węzeł lokalny',ip:'10.20.0.1',ms:[6,5,7]},
+  {e:'🏙️',n:'operator — węzeł regionalny',ip:'198.51.100.17',ms:[9,9,10]},
+  {e:'🌐',n:'punkt wymiany ruchu',ip:'203.0.113.5',ms:[12,11,12]},
+  {e:'🖥️',n:'serwer docelowy',ip:'203.0.113.80',ms:[13,13,14]}
+];
+const TR={ttl:0,start:-99,lines:[]};
+function trReset(){ TR.ttl=0; TR.start=-99; TR.lines=[]; trOut(); }
+function trLine(k){ TR.pending=false; const hp=HOPS[k], n=HOPS.length; TR.lines.push(`${String(k).padStart(2)}  ${hp.ip.padEnd(14)} ${hp.ms.map(m=>(m+' ms').padStart(5)).join(' ')}  ← ${hp.n}`); if(k===n-1) TR.lines.push('\nGotowe: '+(n-2)+' węzły pośrednie + serwer docelowy.'); trOut(); }
+function trOut(){ $('#tr-out').textContent='traceroute do serwera (wynik przykładowy)\n'+TR.lines.join('\n'); }
+$('#tr-step').addEventListener('click',()=>{ if(TR.pending) trLine(TR.ttl); if(TR.ttl>=HOPS.length-1) trReset(); TR.ttl++; TR.start=NOW; TR.pending=true; });
+$('#tr-reset').addEventListener('click',trReset); trReset();
+frame['s-trace']=t=>{
+  const {g,w,h}=fit($('#cv-trace')); const n=HOPS.length, cy=h*0.45, xs=HOPS.map((_,i)=>w*(0.07+0.86*i/(n-1)));
+  for(let i=0;i<n-1;i++) line(g,xs[i]+26,cy,xs[i+1]-26,cy,C.muted,3);
+  HOPS.forEach((hp,i)=>{ emoji(g,hp.e,xs[i],cy,34); text(g,hp.n,xs[i],cy+38,C.fg,Math.min(14,w/95),'center',700); if(i>0&&i<n-1) text(g,'węzeł '+i,xs[i],cy-36,C.muted,12,'center',600); });
+  if(TR.ttl>0){ const k=TR.ttl, dt=t-TR.start, go=0.45*k, back=0.45*k;
+    if(dt<go){ const f=dt/0.45, j=Math.floor(f), u=f-j, x=xs[j]+(xs[j+1]-xs[j])*u, left=k-j;
+      rrect(g,x-26,cy-74,52,24,8,C.accent,null); text(g,'TTL '+left,x,cy-62,'#fff',13,'center',800); emoji(g,'✉️',x,cy-20,20); }
+    else if(dt<go+back){ if(k<n-1&&dt<go+0.35) emoji(g,'💥',xs[k],cy-30,28);
+      const f=(dt-go)/0.45, x=xs[k]-(xs[k]-xs[0])*Math.min(1,f/k);
+      emoji(g,k===n-1?'✅':'📩',x,cy-20,20); label(g,k===n-1?'dotarłem!':'„to ja, węzeł '+k+'"',x,cy-66,C.accent2,13); }
+    else if(TR.pending) trLine(k);
+  }
+};
+
+/* ---------------- słowniczek ---------------- */
+const glToggle=()=>$('#gloss').classList.toggle('show');
+$('#b-gloss').onclick=glToggle; $('#gl-close').onclick=glToggle;
+$('#gl-print').onclick=()=>{ const wdw=window.open('','slowniczek','width=900,height=700'); if(!wdw) return;
+  wdw.document.write('<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>Słowniczek — pojęcia telekomunikacji</title><style>body{font:13px/1.45 system-ui,sans-serif;margin:18px;color:#111}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:4px 6px;vertical-align:top;text-align:left}h3{margin:14px 0 4px}</style></head><body><h2>Podstawowe pojęcia telekomunikacji — słowniczek</h2>'+$('#gl-body').innerHTML+'</body></html>');
+  wdw.document.close(); wdw.focus(); setTimeout(()=>wdw.print(),300); };
+
+/* ---------------- nawigacja ---------------- */
+const slides=$$('.slide'); let cur=0, spk=null;
+function notesHTML(i){const n=slides[i].querySelector('.notes'); return n?n.innerHTML:'<p class="muted">(brak notatek)</p>';}
+function updSpeaker(){
+  if(!spk||spk.closed) return;
+  const nx=slides[cur+1]?slides[cur+1].querySelector('h1,h2').textContent:'— koniec —';
+  spk.document.body.innerHTML=`<h3 style="margin:0 0 .3em">Slajd ${cur+1}/${slides.length}: ${slides[cur].querySelector('h1,h2').textContent}</h3>${notesHTML(cur)}<hr><p style="color:#777">Następny: ${nx}</p>`;
+}
+function show(i){
+  i=Math.max(0,Math.min(slides.length-1,i));
+  slides[cur].classList.remove('active'); cur=i; slides[cur].classList.add('active');
+  $('#prog div').style.width=(100*(cur+1)/slides.length)+'%'; $('#cnt').textContent=(cur+1)+' / '+slides.length;
+  $('#notes').innerHTML=notesHTML(cur); updSpeaker();
+  history.replaceState(null,'','#'+(cur+1));
+}
+const next=()=>show(cur+1), prev=()=>show(cur-1);
+$('#b-next').onclick=next; $('#b-prev').onclick=prev;
+$('#b-notes').onclick=()=>$('#notes').classList.toggle('show');
+$('#b-theme').onclick=toggleTheme;
+const fsToggle=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+$('#b-fs').onclick=fsToggle;
+function openSpeaker(){
+  spk=window.open('','notatki_prowadzacej_tele','width=760,height=640');
+  if(!spk) return;
+  spk.document.title='Notatki prowadzącej';
+  spk.document.head.innerHTML='<meta charset="utf-8"><style>body{font:18px/1.5 system-ui,sans-serif;padding:16px 22px;background:#fffdf6;color:#222}b{color:#b5520c}</style>';
+  updSpeaker();
+}
+$('#b-spk').onclick=openSpeaker;
+document.addEventListener('keydown',e=>{
+  const tag=e.target.tagName, k=e.key;
+  if(tag==='INPUT'&&(e.target.type==='text'||k.startsWith('Arrow'))) return;
+  if(tag==='SELECT') return;
+  if(k==='ArrowRight'||k==='PageDown'||(k===' '&&tag!=='BUTTON')){e.preventDefault();next();}
+  else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();prev();}
+  else if(k==='Home') show(0); else if(k==='End') show(slides.length-1);
+  else if(k==='n'||k==='N') $('#notes').classList.toggle('show');
+  else if(k==='s'||k==='S') openSpeaker();
+  else if(k==='g'||k==='G') glToggle();
+  else if(k==='f'||k==='F') fsToggle();
+  else if(k==='t'||k==='T') toggleTheme();
+  else if(k==='Escape') $('#gloss').classList.remove('show');
+});
+document.addEventListener('click',e=>{ if(e.target.tagName==='BUTTON') e.target.blur(); });
+
+function loop(now){ NOW=now/1000; const f=frame[slides[cur].id]; if(f){ readColors(); try{f(NOW);}catch(err){console.error(err);} } requestAnimationFrame(loop); }
+show((parseInt(location.hash.slice(1))||1)-1);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

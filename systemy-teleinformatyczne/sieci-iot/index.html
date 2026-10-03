@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sieci IoT i ich architektura</title>
+<style>
+:root{
+  --bg:#f7f7f4; --panel:#ffffff; --fg:#1d2330; --muted:#5d6675; --grid:#d9dce2;
+  --accent:#1f6fd1; --accent2:#e2741d; --accent3:#1f9a5a; --danger:#d23b3b; --violet:#7a4cc9; --gold:#c49a00;
+  --chip:#eef2f8;
+}
+:root[data-theme="dark"]{
+  --bg:#12151b; --panel:#1b2029; --fg:#e9edf3; --muted:#9aa4b4; --grid:#323a47;
+  --accent:#5aa2ff; --accent2:#ff9a4a; --accent3:#43c785; --danger:#ff6464; --violet:#ae8cff; --gold:#e8c040;
+  --chip:#232a36;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;overflow:hidden}
+.slide{position:absolute;inset:0;padding:3.2vh 5vw 9vh;display:none;flex-direction:column;gap:1.5vh;overflow:auto}
+.slide.active{display:flex}
+.kicker{font-size:clamp(13px,1.05vw,18px);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-size:clamp(34px,4.6vw,80px);margin:0;line-height:1.05}
+h2{font-size:clamp(26px,3.0vw,50px);margin:0;line-height:1.1}
+p,li,td,th,label,.txt{font-size:clamp(17px,1.55vw,27px);line-height:1.4}
+p{margin:.2em 0}
+ul{margin:.2em 0;padding-left:1.2em} li{margin:.25em 0}
+.muted{color:var(--muted)}
+.big{font-size:clamp(22px,2.2vw,38px)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:2.2vw;align-items:start}
+.cols.c3{grid-template-columns:1fr 1fr 1fr}
+.cols.c4{grid-template-columns:repeat(4,1fr)}
+.cols.c5{grid-template-columns:repeat(5,1fr)}
+.cols.c64{grid-template-columns:1.6fr 1fr}
+.card{background:var(--panel);border:1px solid var(--grid);border-radius:16px;padding:1.3vh 1.3vw}
+.card h3{margin:.1em 0 .3em;font-size:clamp(18px,1.6vw,29px)}
+.card p,.card li{font-size:clamp(14px,1.3vw,22px)}
+.card .emo{font-size:clamp(28px,2.8vw,50px)}
+.def{border-left:6px solid var(--accent);background:var(--panel);border-radius:10px;padding:1vh 1.4vw}
+.def p{font-size:clamp(18px,1.7vw,30px)}
+canvas.viz{width:100%;height:46vh;display:block;background:var(--panel);border:1px solid var(--grid);border-radius:14px}
+.ctrl{display:flex;gap:.9vw;align-items:center;flex-wrap:wrap}
+.ctrl label{display:flex;align-items:center;gap:.5em;font-size:clamp(15px,1.25vw,21px)}
+input[type=range]{width:clamp(140px,15vw,300px);accent-color:var(--accent);height:28px}
+input[type=checkbox]{width:1.2em;height:1.2em;accent-color:var(--accent3)}
+button,select,input[type=text]{font:inherit;font-size:clamp(14px,1.2vw,20px);padding:.33em .75em;border-radius:10px;border:1px solid var(--grid);
+  background:var(--panel);color:var(--fg)}
+button,select{cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+button.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+button.on{background:var(--danger);border-color:var(--danger);color:#fff}
+button.ok{background:var(--accent3);border-color:var(--accent3);color:#fff}
+button.no{background:var(--danger);border-color:var(--danger);color:#fff}
+button.maybe{background:var(--gold);border-color:var(--gold);color:#fff}
+.val{font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent);min-width:5ch;display:inline-block}
+.info{font-size:clamp(14px,1.25vw,21px);color:var(--muted)}
+.info b{color:var(--fg)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid var(--grid);padding:.35em .6em;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.tag{display:inline-block;background:var(--chip);border-radius:8px;padding:.05em .45em;font-weight:600}
+.good{color:var(--accent3);font-weight:600} .bad{color:var(--danger);font-weight:600}
+details{background:var(--panel);border:1px solid var(--grid);border-radius:12px;padding:.6vh 1vw;margin:.6vh 0}
+details summary{cursor:pointer;font-size:clamp(16px,1.4vw,24px);font-weight:600}
+details p{color:var(--accent3);font-weight:600}
+.title-wrap{margin:auto 0;display:flex;flex-direction:column;gap:2vh}
+.stat{font-size:clamp(34px,4vw,68px);font-weight:800;color:var(--accent);line-height:1}
+.check label{display:flex;gap:.6em;align-items:center;padding:.35em 0;font-size:clamp(15px,1.35vw,23px);cursor:pointer}
+.meter{height:26px;border-radius:13px;background:var(--chip);overflow:hidden}
+.meter div{height:100%;transition:width .3s,background .3s}
+.board{background:#0e1117;color:#d6e2f0;border-radius:12px;padding:1vh 1vw;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:clamp(14px,1.2vw,20px);
+  height:30vh;overflow:auto}
+.board div{padding:.15em 0;border-bottom:1px solid #222a36}
+.board .tp{color:#7fb3ff}
+.code{font-size:clamp(30px,3.2vw,56px);font-weight:800;letter-spacing:.15em;color:var(--accent2);font-family:ui-monospace,Menlo,Consolas,monospace}
+.subs{display:grid;grid-template-columns:repeat(4,1fr);gap:.8vw}
+.subs label{flex-direction:column;align-items:flex-start;gap:.2em}
+.subs select{width:100%;font-family:ui-monospace,Menlo,Consolas,monospace}
+.scen{display:grid;grid-template-columns:1fr;gap:.8vh}
+.scen .q{font-size:clamp(17px,1.6vw,28px);font-weight:700}
+.hint{position:fixed;right:1.2vw;top:1vh;font-size:13px;color:var(--muted);opacity:.7}
+#bar{position:fixed;left:0;right:0;bottom:0;height:6vh;min-height:44px;display:flex;align-items:center;gap:.8vw;padding:0 1.2vw;
+  background:var(--panel);border-top:1px solid var(--grid);z-index:10}
+#bar button{padding:.2em .7em}
+#prog{flex:1;height:6px;background:var(--grid);border-radius:4px;overflow:hidden}
+#prog div{height:100%;background:var(--accent);width:0}
+#cnt{font-variant-numeric:tabular-nums;color:var(--muted);font-size:15px;min-width:5ch;text-align:right}
+#notes{position:fixed;left:0;right:0;bottom:6vh;max-height:42vh;overflow:auto;background:var(--panel);border-top:3px solid var(--accent2);
+  padding:1.2vh 2vw;display:none;z-index:9;box-shadow:0 -8px 24px rgba(0,0,0,.15)}
+#notes.show{display:block}
+#notes, #notes *{font-size:clamp(14px,1.12vw,19px)}
+.notes{display:none}
+#gloss{position:fixed;inset:3vh 4vw 8vh;background:var(--panel);border:2px solid var(--accent2);border-radius:16px;padding:2vh 2vw;overflow:auto;
+  z-index:20;display:none;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+#gloss.show{display:block}
+#gloss td,#gloss th,#gloss p,#gloss li{font-size:clamp(13px,1.05vw,17px)}
+#gloss h2{font-size:clamp(22px,2vw,32px)}
+#gloss h3{margin:1.2em 0 .3em}
+@media (max-width:800px){.cols,.cols.c3,.cols.c4,.cols.c5,.cols.c64,.subs{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hint">← → przewijanie · N notatki · S okno prowadzącej · G słowniczek · F pełny ekran · T motyw</div>
+
+<!-- ================= 1. TYTUŁ ================= -->
+<section class="slide" id="s-title">
+  <div class="title-wrap">
+    <div class="kicker">Systemy teleinformatyczne · sieci specjalistyczne</div>
+    <h1>Sieci IoT i ich architektura</h1>
+    <p class="big muted">Internet Rzeczy: jak „rozmawiają" ze sobą czujniki, żarówki i wodomierze</p>
+    <p class="muted">mgr Jolanta Okarmus · Instytut Nauk Inżynieryjno-Technicznych</p>
+  </div>
+  <aside class="notes">
+    <p><b>Dla prowadzącej — o czym jest ten wykład (2 zdania):</b> IoT (Internet of Things, Internet Rzeczy) to zwykłe przedmioty z czujnikiem i modułem łączności, które same wysyłają dane i wykonują polecenia. Wykład pokazuje, z czego taki system się składa (architektura), jak urządzenia się łączą (technologie radiowe), jak „rozmawiają" (MQTT) i dlaczego bywają niebezpieczne.</p>
+    <p><b>Wykład zdalny:</b> zamiast „podnieście rękę" proś o odpowiedzi <b>na czacie</b> (Teams/Zoom) — przy grze „Dobierz technologię" i quizie. Udostępniaj ekran z tą kartą przeglądarki (najlepiej Chrome); przed pokazem naciśnij F (pełny ekran).</p>
+    <p><b>Plan czasu (60 min):</b> czym jest IoT 8 min · architektura 14 min · łączność 18 min · MQTT i bezpieczeństwo 14 min · podsumowanie 6 min. Slajd „MQTT na żywo" jest opcjonalny.</p>
+    <p><b>Klawisz G</b> — słowniczek dla prowadzącej (warto przeczytać przed wykładem, można wydrukować).</p>
+  </aside>
+</section>
+
+<!-- ================= 2. PLAN ================= -->
+<section class="slide" id="s-plan">
+  <div class="kicker">Plan</div>
+  <h2>O czym dziś?</h2>
+  <div class="cols">
+    <div class="card"><h3>1. Czym jest IoT</h3><p class="muted">przykłady, budowa urządzenia, problem baterii</p></div>
+    <div class="card"><h3>2. Architektura</h3><p class="muted">warstwy, droga pomiaru od czujnika do aplikacji, edge i chmura</p></div>
+    <div class="card"><h3>3. Łączność</h3><p class="muted">Wi-Fi, BLE, Zigbee, LoRaWAN, NB-IoT… — jak wybrać?</p></div>
+    <div class="card"><h3>4. Komunikacja i bezpieczeństwo</h3><p class="muted">protokół MQTT, botnet Mirai, jak się chronić</p></div>
+  </div>
+  <aside class="notes"><p>Zapytaj na czacie: „Wymieńcie jedno urządzenie w domu, które łączy się z internetem, a nie jest komputerem ani telefonem." Odpowiedzi (telewizor, odkurzacz, żarówka, licznik, zegarek…) od razu wprowadzają temat.</p></aside>
+</section>
+
+<!-- ================= 3. CZYM JEST IoT ================= -->
+<section class="slide" id="s-what">
+  <div class="kicker">Część 1 · Czym jest IoT</div>
+  <h2>Internet Rzeczy (IoT — Internet of Things)</h2>
+  <div class="def"><p><b>IoT</b> — sieć <b>przedmiotów</b> wyposażonych w czujniki, elementy wykonawcze i łączność, które <b>same zbierają dane, wymieniają je i reagują</b> — zwykle bez udziału człowieka.</p></div>
+  <div class="cols c5">
+    <div class="card"><div class="emo">🏠</div><h3>Dom</h3><p class="muted">żarówki, termostaty, czujniki dymu i zalania</p></div>
+    <div class="card"><div class="emo">🏙️</div><h3>Miasto</h3><p class="muted">wolne miejsca parkingowe, latarnie, jakość powietrza</p></div>
+    <div class="card"><div class="emo">🌾</div><h3>Rolnictwo</h3><p class="muted">wilgotność gleby, automatyczne podlewanie</p></div>
+    <div class="card"><div class="emo">⌚</div><h3>Zdrowie</h3><p class="muted">opaski, zegarki, glukometry</p></div>
+    <div class="card"><div class="emo">🏭</div><h3>Przemysł (IIoT)</h3><p class="muted">drgania maszyn, zużycie energii, logistyka</p></div>
+  </div>
+  <div class="cols c3">
+    <div class="card"><div class="stat">ok. 18,5 mld</div><p>połączonych urządzeń IoT na świecie (2024)</p></div>
+    <div class="card"><div class="stat">ok. 21 mld</div><p>prognoza na 2025</p></div>
+    <div class="card"><div class="stat">ok. 40 mld</div><p>prognoza na 2030</p><p class="muted">źródło: IoT Analytics</p></div>
+  </div>
+  <aside class="notes">
+    <p><b>W skrócie:</b> IoT to nie komputer ani telefon, tylko „rzecz" (żarówka, licznik, czujnik), która dostała mały komputerek i radio. Dzięki temu sama mierzy, wysyła dane i wykonuje polecenia.</p>
+    <p><b>Liczby:</b> wg firmy analitycznej IoT Analytics w 2024 r. było ok. 18,5 mld połączonych urządzeń IoT (więcej niż ludzi na Ziemi — ponad 2 na osobę), prognoza na 2030 r. — ok. 40 mld.</p>
+    <p><b>Jeśli zapytają, czy telefon to IoT:</b> zwykle nie — telefon i komputer to „klasyczny internet", obsługiwany przez człowieka. Telefon często jest za to „pilotem" do urządzeń IoT.</p>
+  </aside>
+</section>
+
+<!-- ================= 5. BUDOWA URZĄDZENIA + BATERIA ================= -->
+<section class="slide" id="s-device">
+  <div class="kicker">Część 1 · Budowa urządzenia</div>
+  <h2>Mały komputer, radio i bateria, która ma wystarczyć na lata</h2>
+  <div class="cols c5">
+    <div class="card"><div class="emo">🌡️</div><h3>czujnik</h3><p class="muted">mierzy</p></div>
+    <div class="card"><div class="emo">🔲</div><h3>mikrokontroler</h3><p class="muted">liczy, decyduje (np. ESP32)</p></div>
+    <div class="card"><div class="emo">📡</div><h3>radio</h3><p class="muted">wysyła i odbiera — <b>zużywa najwięcej energii</b></p></div>
+    <div class="card"><div class="emo">🔋</div><h3>zasilanie</h3><p class="muted">bateria, sieć, panel PV</p></div>
+    <div class="card"><div class="emo">⚙️</div><h3>aktuator</h3><p class="muted">działa (opcjonalnie)</p></div>
+  </div>
+  <div class="ctrl">
+    <label>pomiar wysyłany co <input type="range" id="bt-int" min="0" max="1000" value="600"> <span class="val" id="bt-iv"></span></label>
+    <label>bateria <select id="bt-bat"><option value="220">pastylka CR2032 (220 mAh)</option><option value="2500" selected>2 × AA (2500 mAh)</option></select></label>
+  </div>
+  <canvas class="viz" id="cv-bat" style="height:30vh"></canvas>
+  <p class="info">Model uproszczony, wartości orientacyjne: urządzenie „śpi" (kilka µA), budzi się, wysyła pomiar i znowu zasypia. * Powyżej ok. 10 lat ogranicza samorozładowanie baterii.</p>
+  <aside class="notes">
+    <p><b>W skrócie:</b> urządzenie IoT to czujnik + mały komputerek (mikrokontroler) + radio + zasilanie. Najwięcej prądu zjada <b>radio</b>, dlatego urządzenia bateryjne przez większość czasu <b>śpią</b> i budzą się tylko na chwilę, żeby wysłać pomiar.</p>
+    <p><b>Co kliknąć:</b> przesuń suwak od „co 1 s" do „co 1 h" — czas pracy na baterii rośnie z dni do lat. Zwróć uwagę na różnice między technologiami: Wi-Fi przy każdym wysłaniu musi się „połączyć z siecią" (kilka sekund dużego poboru prądu), BLE i Zigbee — ułamki sekundy.</p>
+    <p><b>Wniosek:</b> „Czujnik zalania na Wi-Fi na paluszkach wytrzyma tygodnie–miesiące, na Zigbee — lata." Powyżej ok. 10 lat ogranicza nas samorozładowanie baterii.</p>
+    <p><b>Jeśli zapytają o ESP32:</b> popularny, tani (kilkanaście–kilkadziesiąt zł) mikrokontroler z wbudowanym Wi-Fi i Bluetooth — standard w projektach IoT, także studenckich.</p>
+  </aside>
+</section>
+
+<!-- ================= 6. ARCHITEKTURA WARSTWOWA ================= -->
+<section class="slide" id="s-layers">
+  <div class="kicker">Część 2 · Architektura</div>
+  <h2>Architektura warstwowa IoT</h2>
+  <table>
+    <tr><th style="width:20%">Warstwa</th><th>Zadanie</th><th>Elementy</th></tr>
+    <tr><td><b style="color:#1f6fd1">3. aplikacji</b></td><td>przechowuje i analizuje dane, udostępnia usługi użytkownikowi</td><td>serwer / chmura, baza danych, reguły automatyki, aplikacja mobilna, panel, alarmy</td></tr>
+    <tr><td><b style="color:#1f9a5a">2. sieci</b></td><td>przesyła dane z urządzeń do aplikacji i polecenia z powrotem</td><td>łączność radiowa (Zigbee, LoRaWAN, NB-IoT, Wi-Fi…), bramka, internet, protokoły (MQTT)</td></tr>
+    <tr><td><b style="color:#e2741d">1. percepcji</b> (urządzeń)</td><td>mierzy wielkości fizyczne i wykonuje polecenia</td><td>czujniki, elementy wykonawcze (aktuatory), mikrokontroler</td></tr>
+  </table>
+  <p>Dane płyną <b>w górę</b> (pomiary), a polecenia <b>w dół</b> (sterowanie).</p>
+  <aside class="notes">
+    <p><b>W skrócie:</b> warstwy to sposób na uporządkowanie systemu — każda ma jedno zadanie. Najprostszy podział: <b>mierzę</b> (percepcja) → <b>przesyłam</b> (sieć) → <b>wykorzystuję</b> (aplikacja). </p>
+    <p><b>Jeśli zapytają o inne modele:</b> w literaturze spotyka się też modele z większą liczbą warstw (np. 5-warstwowy, który osobno wydziela przetwarzanie danych i warstwę biznesową). Na tym przedmiocie używamy modelu 3-warstwowego.</p>
+    <p>Za chwilę obejrzymy to na konkretnym przykładzie — szklarni.</p>
+  </aside>
+</section>
+
+<!-- ================= 7. PODRÓŻ POMIARU ================= -->
+<section class="slide" id="s-journey">
+  <div class="kicker">Część 2 · Architektura w praktyce</div>
+  <h2>Podróż pomiaru: inteligentna szklarnia</h2>
+  <div class="ctrl">
+    <label>wilgotność gleby <input type="range" id="jr-h" min="0" max="100" value="24"> <span class="val" id="jr-hv"></span></label>
+    <button class="primary" id="jr-go">▶ wyślij pomiar</button>
+  </div>
+  <canvas class="viz" id="cv-journey" style="height:52vh"></canvas>
+  <p class="info" id="jr-info">Reguła w chmurze: <b>jeśli wilgotność &lt; 30% → otwórz zawór</b>.</p>
+  <aside class="notes">
+    <p><b>W skrócie:</b> czujnik w ziemi mierzy wilgotność → wysyła ją radiem (LoRaWAN) do <b>bramki</b> (gateway — urządzenia, które odbiera dane radiowe czujników i przekazuje je do internetu) → przez internet do <b>chmury</b> → tam reguła decyduje → polecenie wraca w dół do <b>zaworu</b>, a wynik pokazuje się w aplikacji na telefonie.</p>
+    <p><b>Co kliknąć:</b> „wyślij pomiar" przy 24% — zawór się otwiera (💦). Ustaw 60% i wyślij — chmura odpowiada „nie podlewam".</p>
+    <p><b>Co mówić:</b> „Pomiar idzie w górę przez warstwy, polecenie wraca w dół. Każda warstwa robi jedno: czujnik mierzy, sieć przenosi, chmura decyduje, aplikacja pokazuje."</p>
+    <p><b>Jeśli zapytają, po co bramka:</b> czujnik komunikuje się protokołem radiowym LoRaWAN, a internet działa na protokole IP. Bramka zamienia jedno na drugie i obsługuje setki czujników jednocześnie.</p>
+  </aside>
+</section>
+
+<!-- ================= 8. EDGE vs CHMURA ================= -->
+<section class="slide" id="s-edge">
+  <div class="kicker">Część 2 · Gdzie podejmować decyzje?</div>
+  <h2>Edge czy chmura? — pożar w magazynie</h2>
+  <div class="ctrl">
+    <button class="primary" id="ed-cloud">🔥 decyzja w chmurze</button>
+    <button class="primary" id="ed-edge">🔥 decyzja lokalnie (edge)</button>
+    <label><input type="checkbox" id="ed-down"> awaria internetu</label>
+  </div>
+  <canvas class="viz" id="cv-edge" style="height:44vh"></canvas>
+  <div class="cols c3">
+    <div class="card"><h3>☁️ Chmura (cloud)</h3><p>ogromna moc, historia, analiza wszystkich obiektów — ale daleko</p></div>
+    <div class="card"><h3>🌫️ Mgła (fog)</h3><p>serwer „po drodze", np. w budynku lub u operatora</p></div>
+    <div class="card"><h3>⚡ Brzeg (edge)</h3><p>decyzja przy czujniku — szybko, działa bez internetu</p></div>
+  </div>
+  <aside class="notes">
+    <p><b>W skrócie:</b> dane można przetwarzać daleko (chmura — duża moc, ale opóźnienie i zależność od internetu) albo blisko urządzenia (<b>edge</b>, „brzeg sieci" — szybko i niezawodnie, ale mniejsza moc). Pośrednio — <b>fog</b> (mgła).</p>
+    <p><b>Co kliknąć:</b> „decyzja w chmurze" — sygnał wędruje przez internet do chmury i z powrotem (ok. 120 ms). „Decyzja lokalnie" — kilka ms. Zaznacz „awaria internetu" i powtórz: chmura nigdy nie odpowie, edge działa dalej.</p>
+    <p><b>W praktyce:</b> decyzje krytyczne (bezpieczeństwo, sterowanie maszyną) → edge; statystyki, prognozy, raporty → chmura. Czasy na slajdzie są orientacyjne.</p>
+  </aside>
+</section>
+
+<!-- ================= 9. TRÓJKĄT KOMPROMISU ================= -->
+<section class="slide" id="s-triangle">
+  <div class="kicker">Część 3 · Łączność</div>
+  <h2>Zasięg, przepływność, energia — wybierz dwa</h2>
+  <div class="ctrl">
+    <span class="info">chcę mieć:</span>
+    <button data-tri="range">📏 duży zasięg</button>
+    <button data-tri="rate">🚀 dużą przepływność</button>
+    <button data-tri="power">🔋 małe zużycie energii</button>
+  </div>
+  <canvas class="viz" id="cv-tri" style="height:50vh"></canvas>
+  <p class="info" id="tri-info"></p>
+  <aside class="notes">
+    <p><b>W skrócie:</b> fizyki nie da się oszukać — radio, które daleko i szybko przesyła dużo danych, musi zużywać dużo energii. Dlatego nie ma jednej „najlepszej" technologii IoT — wybieramy kompromis.</p>
+    <p><b>Co kliknąć:</b> wybierz dwie cechy — trzecia „odpada" i pokazuje się, jakie technologie pasują. Np. zasięg + mała energia = LoRaWAN / NB-IoT, ale przesyłają tylko małe porcje danych (kilka bajtów co kilka minut).</p>
+    <p>To uproszczenie — w rzeczywistości granice są płynne, ale jako zasada „na start" działa bardzo dobrze.</p>
+  </aside>
+</section>
+
+<!-- ================= 10. MAPA TECHNOLOGII ================= -->
+<section class="slide" id="s-techmap">
+  <div class="kicker">Część 3 · Łączność</div>
+  <h2>Mapa technologii IoT <span class="muted" style="font-size:.6em">kliknij prostokąt</span></h2>
+  <div class="cols c64">
+    <canvas class="viz" id="cv-tech" style="height:56vh;cursor:pointer"></canvas>
+    <div class="card" id="tech-card" style="min-height:40vh"></div>
+  </div>
+  <aside class="notes">
+    <p><b>W skrócie:</b> oś pozioma — zasięg (od centymetrów do kilometrów), pionowa — przepływność (ile danych na sekundę). Kolor — zużycie energii (zielony = mało, czerwony = dużo). Obie osie są logarytmiczne: każda kreska to 10× więcej.</p>
+    <p><b>Trzy „rodziny":</b></p>
+    <ul>
+      <li><b>krótki zasięg</b> (centymetry–dziesiątki metrów): NFC, RFID, Bluetooth Low Energy, Zigbee, Thread, Z-Wave, Wi-Fi — dom, biuro, ciało.</li>
+      <li><b>LPWAN</b> (Low Power Wide Area Network — sieci rozległe o małym poborze mocy): LoRaWAN, NB-IoT, LTE-M — kilometry zasięgu, lata na baterii, ale bardzo mało danych. Liczniki, rolnictwo, miasto.</li>
+      <li><b>komórkowe 4G/5G</b> — duży zasięg i szybkość, ale dużo energii: kamery, samochody.</li>
+    </ul>
+    <p><b>Jeśli zapytają o różnicę LoRa vs LoRaWAN:</b> LoRa to sposób nadawania radiowego (warstwa fizyczna), LoRaWAN — protokół sieci zbudowanej na LoRa.</p>
+    <p><b>NB-IoT i LTE-M</b> działają w sieciach operatorów komórkowych (karta SIM), LoRaWAN — w sieci, którą można postawić samemu (własna bramka).</p>
+  </aside>
+</section>
+
+<!-- ================= 11. DOBIERZ TECHNOLOGIĘ ================= -->
+<section class="slide" id="s-game">
+  <div class="kicker">Część 3 · Gra</div>
+  <h2>Dobierz technologię <span class="muted" style="font-size:.6em" id="gm-cnt"></span></h2>
+  <div class="scen">
+    <div class="card"><p class="q" id="gm-q"></p><p class="muted" id="gm-d"></p></div>
+    <div class="ctrl" id="gm-opts"></div>
+    <div class="def"><p id="gm-ans">Wybierz odpowiedź — albo najpierw zapytaj studentów na czacie.</p></div>
+    <div class="ctrl"><button id="gm-prev">◀ poprzedni</button><button class="primary" id="gm-next">następny scenariusz ▶</button></div>
+  </div>
+  <aside class="notes">
+    <p><b>Jak prowadzić (wykład zdalny):</b> przeczytaj scenariusz, poproś: „Napiszcie na czacie, którą technologię byście wybrali". Odczekaj 20–30 s, potem kliknij odpowiedź. Zielony = najlepszy wybór, żółty = też możliwe, czerwony = zły pomysł — pod spodem pojawia się wyjaśnienie.</p>
+    <p>Często <b>kilka odpowiedzi jest dopuszczalnych</b> — chodzi o uzasadnienie (zasięg? bateria? ilość danych? ruch?). Doceniaj dobre argumenty na czacie.</p>
+  </aside>
+</section>
+
+<!-- ================= 12. ZIGBEE MESH ================= -->
+<section class="slide" id="s-mesh">
+  <div class="kicker">Część 3 · Topologie w IoT</div>
+  <h2>Siatka w domu: sieć Zigbee <span class="muted" style="font-size:.6em">kliknij lampę/gniazdko, by je wyłączyć · kliknij czujnik, by wysłał wiadomość</span></h2>
+  <div class="ctrl">
+    <label><input type="checkbox" id="zg-range"> pokaż zasięg radia</label>
+    <button id="zg-fix">🔌 włącz wszystko</button>
+    <span class="info">🟧 bramka (koordynator) · 🟦 router — zasilany z gniazdka, przekazuje dalej · ⚪ czujnik na baterii — tylko nadaje</span>
+  </div>
+  <canvas class="viz" id="cv-zig" style="height:50vh;cursor:pointer"></canvas>
+  <p class="info" id="zg-info"></p>
+  <aside class="notes">
+    <p><b>W skrócie:</b> w sieci Zigbee (i podobnej Thread) są trzy role:</p>
+    <ul>
+      <li><b>koordynator</b> (bramka smart home) — zakłada sieć, jest jeden;</li>
+      <li><b>routery</b> — urządzenia zasilane z gniazdka (żarówki, gniazdka, włączniki): cały czas nasłuchują i <b>przekazują dalej</b> wiadomości innych — tworzą siatkę;</li>
+      <li><b>urządzenia końcowe</b> — czujniki na baterii: śpią, budzą się tylko, by nadać do najbliższego routera. <b>Nie przekazują</b> cudzych wiadomości (szkoda baterii).</li>
+    </ul>
+    <p><b>Co kliknąć:</b> kliknij termometr w sypialni — widać trasę skokami przez routery do bramki. Wyłącz lampę w kuchni → kliknij termometr jeszcze raz: sieć sama znajduje objazd (przez salon). Wyłącz też gniazdko w sypialni → termometr traci łączność (czerwony): nie ma żadnego routera w zasięgu.</p>
+    <p><b>Nawiązanie do wykładu o topologiach:</b> to siatka częściowa — odporna, bo jest objazd. Wi-Fi i Bluetooth w domu to zwykle gwiazda (wszystko przez router / telefon), a LoRaWAN — „gwiazda gwiazd" (czujniki → bramki → serwer).</p>
+    <p><b>Praktyczna rada (pytania studentów):</b> im więcej urządzeń zasilanych z sieci, tym mocniejsza sieć Zigbee. Czujniki na baterii jej nie wzmacniają.</p>
+  </aside>
+</section>
+
+<!-- ================= 13. MQTT ================= -->
+<section class="slide" id="s-mqtt">
+  <div class="kicker">Część 4 · Jak urządzenia „rozmawiają"</div>
+  <h2>MQTT — model publikuj–subskrybuj</h2>
+  <div class="ctrl">
+    <span class="info">publikuj:</span>
+    <button data-pub="0">🌡️ salon</button><button data-pub="1">💧 łazienka</button><button data-pub="2">🌡️ sypialnia</button><button data-pub="3">🚪 drzwi</button>
+    <button id="mq-auto">▶ automatycznie</button>
+  </div>
+  <canvas class="viz" id="cv-mqtt" style="height:40vh"></canvas>
+  <div class="subs" id="mq-subs"></div>
+  <p class="info"><span class="mono tag">+</span> = dowolny <b>jeden</b> poziom tematu · <span class="mono tag">#</span> = <b>wszystko</b> dalej</p>
+  <aside class="notes">
+    <p><b>W skrócie:</b> MQTT to najpopularniejszy protokół wymiany wiadomości w IoT. Działa w modelu <b>publikuj–subskrybuj</b>:</p>
+    <ul>
+      <li>czujnik <b>publikuje</b> wiadomość na <b>temat</b> (np. <span class="mono">dom/salon/temperatura</span>) — nie wie i nie musi wiedzieć, kto ją przeczyta;</li>
+      <li><b>broker</b> (serwer pośredniczący) przyjmuje wiadomości i rozsyła je do wszystkich, którzy <b>subskrybowali</b> pasujący temat;</li>
+      <li>odbiorcy (aplikacja, termostat) <b>subskrybują</b> tematy, które ich interesują.</li>
+    </ul>
+    <p><b>Co kliknąć:</b> opublikuj „salon" — trafia do aplikacji (subskrybuje <span class="mono">dom/#</span> = wszystko), termostatu i panelu temperatur (<span class="mono">dom/+/temperatura</span>). „Łazienka" (wilgotność) trafia tylko do aplikacji. Zmieniaj subskrypcje w listach pod spodem i publikuj jeszcze raz.</p>
+    <p><b>Najważniejsza cecha:</b> nadawca nie wysyła do każdego odbiorcy osobno i nie musi znać odbiorców — rozsyłaniem zajmuje się broker.</p>
+    <p><b>Dlaczego to dobre dla IoT:</b> wiadomości są małe (oszczędza energię i łącze), a nowe urządzenia łatwo dołączyć — wystarczy, że zasubskrybują temat.</p>
+  </aside>
+</section>
+
+<!-- ================= 14. MQTT NA ŻYWO (opcjonalnie) ================= -->
+<section class="slide" id="s-live">
+  <div class="kicker">Część 4 · Na żywo (opcjonalnie, wymaga internetu)</div>
+  <h2>Wyślij wiadomość na ekran wykładu przez MQTT</h2>
+  <div class="cols">
+    <div>
+      <div class="card">
+        <p><b>1.</b> Otwórz w przeglądarce (także w telefonie): <span class="mono tag">hivemq.com/demos/websocket-client</span></p>
+        <p><b>2.</b> Host: <span class="mono tag">broker.hivemq.com</span> · Port: <span class="mono tag">8884</span> · zaznacz <b>SSL</b> → <b>Connect</b></p>
+        <p><b>3.</b> Publish → Topic: <span class="mono tag">wyklad-iot/<span class="lv-code"></span>/twoje-imie</span></p>
+        <p><b>4.</b> Message: dowolny tekst → <b>Publish</b></p>
+      </div>
+      <p>kod wykładu: <span class="code lv-code"></span></p>
+      <div class="ctrl"><button class="primary" id="lv-conn">🔌 połącz z brokerem</button><button id="lv-clear">🧹 wyczyść</button><span class="info" id="lv-stat">niepołączony</span></div>
+      <div class="ctrl"><input type="text" id="lv-msg" placeholder="wiadomość testowa" style="width:14em"><button id="lv-send">📤 wyślij test</button></div>
+    </div>
+    <div><p class="info">wiadomości subskrybowane z tematu <span class="mono">wyklad-iot/<span class="lv-code"></span>/#</span>:</p><div class="board" id="lv-board"></div></div>
+  </div>
+  <aside class="notes">
+    <p><b>Opcjonalny pokaz (5 min).</b> Studenci wysyłają wiadomość ze swojego telefonu/komputera przez publiczny broker MQTT — a ona pojawia się na udostępnianym ekranie. Pokazuje, że publikujący nie znają odbiorców — wystarczy wspólny broker i temat.</p>
+    <p><b>Przed wykładem:</b> sprawdź, czy działa — kliknij „połącz z brokerem", potem wpisz coś w polu testowym i „wyślij test". Jeśli wiadomość pojawi się po prawej — wszystko gra. Jeśli status pokazuje błąd (np. sieć blokuje) — <b>pomiń ten slajd</b>, symulacja z poprzedniego wystarczy.</p>
+    <p><b>Na wykładzie:</b> kliknij „połącz", wklej studentom na czat instrukcję z lewej strony (kod wykładu jest losowy przy każdym otwarciu pliku — przepisz go z ekranu). Dostają ci, którzy znają temat z kodem.</p>
+    <p><b>Uwaga:</b> to publiczny, testowy broker — każdy na świecie mógłby przeczytać te wiadomości, jeśli zna temat. Powiedz studentom, żeby nie wysyłali danych osobowych. To zresztą dobry wstęp do slajdu o bezpieczeństwie! Przycisk „wyczyść" usuwa wiadomości z ekranu.</p>
+  </aside>
+</section>
+
+<!-- ================= 15. INNE PROTOKOŁY ================= -->
+<section class="slide" id="s-protos">
+  <div class="kicker">Część 4 · Protokoły</div>
+  <h2>Inne „języki" urządzeń IoT</h2>
+  <table>
+    <tr><th>Protokół</th><th>Jak działa</th><th>Kiedy</th></tr>
+    <tr><td><b>MQTT</b></td><td>publikuj–subskrybuj przez brokera</td><td>telemetria, smart home, przemysł — najpopularniejszy</td></tr>
+    <tr><td><b>HTTP / REST</b></td><td>zapytanie–odpowiedź, jak strona WWW</td><td>urządzenia z Wi-Fi i zasilaniem; integracje z aplikacjami</td></tr>
+    <tr><td><b>CoAP</b></td><td>„odchudzony HTTP" dla bardzo słabych urządzeń</td><td>czujniki bateryjne, sieci o małej przepływności</td></tr>
+    <tr><td><b>Matter</b></td><td>wspólny standard inteligentnego domu (od 2022 r.), działa przez Wi-Fi, Thread lub Ethernet</td><td>żeby urządzenia różnych firm (Apple, Google, Amazon…) działały razem</td></tr>
+  </table>
+  <aside class="notes">
+    <p><b>W skrócie:</b> MQTT nie jest jedyny. HTTP to „język" stron internetowych — prosty, ale ciężki dla małych urządzeń. CoAP jest jego lekką wersją. <b>Matter</b> to standard opublikowany w październiku 2022 r. przez Connectivity Standards Alliance — rozwiązuje problem „ta żarówka działa tylko z aplikacją jednego producenta".</p>
+    <p>Ten slajd można pominąć, jeśli brakuje czasu — wystarczy powiedzieć, że MQTT jest najważniejszy.</p>
+  </aside>
+</section>
+
+<!-- ================= 16. BEZPIECZEŃSTWO ================= -->
+<section class="slide" id="s-sec">
+  <div class="kicker">Część 4 · Bezpieczeństwo</div>
+  <h2>„S" w skrócie IoT oznacza bezpieczeństwo 😉</h2>
+  <div class="cols">
+    <div class="card">
+      <h3>🦠 Botnet Mirai (2016)</h3>
+      <p>Wirus przejmował <b>kamery IP i rejestratory wideo</b>, logując się <b>fabrycznymi hasłami</b> (miał listę ok. 60 par login–hasło).</p>
+      <p>21 października 2016 r. setki tysięcy przejętych urządzeń jednocześnie zaatakowały firmę Dyn (DNS) — atak DDoS o mocy ok. <b>1,2 Tb/s</b>. Na wiele godzin nie działały m.in. Twitter, Netflix, GitHub.</p>
+    </div>
+    <div class="card check">
+      <h3>🛡️ Zabezpiecz swój dom</h3>
+      <div id="sec-list"></div>
+      <p style="margin-top:.6em">ryzyko: <b id="sec-val"></b></p>
+      <div class="meter"><div id="sec-bar"></div></div>
+    </div>
+  </div>
+  <aside class="notes">
+    <p><b>W skrócie:</b> urządzenia IoT są tanie, słabe i rzadko aktualizowane — idealny cel dla przestępców. Nie chodzi zwykle o Twoje dane z lodówki, tylko o to, żeby <b>użyć Twojego urządzenia do ataku na kogoś innego</b> (botnet = sieć przejętych urządzeń sterowanych przez atakującego; DDoS = zalanie serwera ruchem, aż przestanie działać).</p>
+    <p><b>Mirai</b> to najsłynniejszy przykład: nie wykorzystywał żadnej wyrafinowanej luki — po prostu próbował <b>domyślnych haseł</b> (np. admin/admin). W części urządzeń hasła nie dało się nawet zmienić.</p>
+    <p><b>Co kliknąć:</b> zaznaczaj kolejne zabezpieczenia — pasek ryzyka spada. Największy efekt: zmiana domyślnego hasła.</p>
+    <p><b>Żart w tytule:</b> „W skrócie IoT litera S oznacza bezpieczeństwo (Security)" — popularny żart branżowy: w skrócie IoT nie ma litery S, tak jak często nie ma bezpieczeństwa.</p>
+    <p>Szczegóły bezpieczeństwa sieci (firewall, VPN, segmentacja) — w osobnym temacie „Bezpieczeństwo sieci".</p>
+  </aside>
+</section>
+
+<!-- ================= 17. IIoT ================= -->
+<section class="slide" id="s-iiot">
+  <div class="kicker">Część 4 · IoT w przemyśle</div>
+  <h2>Przemysłowy Internet Rzeczy (IIoT) i Przemysł 4.0</h2>
+  <div class="cols c3">
+    <div class="card"><div class="emo">📳</div><h3>Konserwacja predykcyjna</h3><p>czujniki drgań i temperatury na silnikach przewidują awarię, <b>zanim</b> nastąpi</p></div>
+    <div class="card"><div class="emo">⚡</div><h3>Monitoring energii</h3><p>pomiar zużycia każdej maszyny — gdzie „uciekają" pieniądze</p></div>
+    <div class="card"><div class="emo">📦</div><h3>Logistyka</h3><p>śledzenie palet, kontenerów i ciężarówek w czasie rzeczywistym</p></div>
+  </div>
+  <div class="def"><p>W fabryce wymagania są ostrzejsze: <b>niezawodność</b>, <b>przewidywalny czas reakcji</b>, praca w zakłóceniach. Dlatego obok IoT działają specjalne <b>sieci przemysłowe</b> — Modbus, OPC UA, systemy SCADA. → <i>temat następnego wykładu</i></p></div>
+  <aside class="notes">
+    <p><b>W skrócie:</b> IIoT (Industrial IoT) to IoT w fabrykach, energetyce, transporcie. Przemysł 4.0 = fabryka, w której maszyny są połączone siecią, zbierają dane i częściowo same podejmują decyzje.</p>
+    <p><b>Konserwacja predykcyjna</b> to najczęstszy przykład: zamiast wymieniać łożysko „co pół roku" albo „gdy się zepsuje", wymieniamy je wtedy, gdy czujnik drgań pokazuje, że zaczyna się zużywać.</p>
+    <p>Ten slajd jest pomostem do kolejnego tematu z sylabusa: sieci przemysłowe (SCADA, Modbus, OPC UA).</p>
+  </aside>
+</section>
+
+<!-- ================= 18. ŚCIĄGA ================= -->
+<section class="slide" id="s-summary">
+  <div class="kicker">Podsumowanie</div>
+  <h2>Ściąga</h2>
+  <table>
+    <tr><th>Pojęcie</th><th>W jednym zdaniu</th></tr>
+    <tr><td><b>IoT</b></td><td>przedmioty z czujnikami i łącznością, które same zbierają dane i reagują</td></tr>
+    <tr><td><b>architektura 3-warstwowa</b></td><td>percepcja (czujniki, aktuatory) → sieć (przesyłanie) → aplikacja (usługi)</td></tr>
+    <tr><td><b>bramka (gateway)</b></td><td>przekazuje dane z sieci radiowej czujników (np. LoRaWAN, Zigbee) do internetu</td></tr>
+    <tr><td><b>edge / chmura</b></td><td>decyzja przy urządzeniu (szybko, bez internetu) / w centrum danych (moc, historia)</td></tr>
+    <tr><td><b>LPWAN</b></td><td>daleko + mało energii + mało danych: LoRaWAN, NB-IoT, LTE-M</td></tr>
+    <tr><td><b>krótki zasięg</b></td><td>NFC, BLE, Zigbee, Thread, Z-Wave, Wi-Fi</td></tr>
+    <tr><td><b>siatka Zigbee</b></td><td>routery z gniazdka przekazują dalej, czujniki na baterii tylko nadają</td></tr>
+    <tr><td><b>MQTT</b></td><td>publikuj–subskrybuj przez brokera; tematy z <span class="mono">+</span> i <span class="mono">#</span></td></tr>
+    <tr><td><b>bezpieczeństwo</b></td><td>zmień domyślne hasło, aktualizuj, osobna sieć dla IoT</td></tr>
+  </table>
+  <aside class="notes"><p>Moment na pytania (na czacie). Tabela = materiał na kolokwium.</p></aside>
+</section>
+
+<!-- ================= 19. QUIZ ================= -->
+<section class="slide" id="s-quiz">
+  <div class="kicker">Sprawdź się</div>
+  <h2>Szybki quiz <span class="muted">(kliknij, by zobaczyć odpowiedź)</span></h2>
+  <div class="cols">
+    <div>
+      <details><summary>1. Wymień 3 warstwy architektury IoT.</summary><p>percepcji (urządzeń), sieci, aplikacji</p></details>
+      <details><summary>2. Dlaczego czujnik na baterii większość czasu „śpi"?</summary><p>żeby oszczędzać energię — najwięcej zużywa radio</p></details>
+      <details><summary>3. Jaką technologię wybrać dla wodomierzy na całym osiedlu?</summary><p>LPWAN: NB-IoT albo LoRaWAN</p></details>
+      <details><summary>4. Czy czujnik na baterii w sieci Zigbee przekazuje wiadomości innych?</summary><p>nie — robią to routery zasilane z gniazdka</p></details>
+    </div>
+    <div>
+      <details><summary>5. Kto w MQTT rozsyła wiadomości do odbiorców?</summary><p>broker</p></details>
+      <details><summary>6. Subskrypcja <span class="mono">dom/+/temperatura</span> — czy dostanie <span class="mono">dom/salon/wilgotnosc</span>?</summary><p>nie — ostatni poziom tematu się nie zgadza</p></details>
+      <details><summary>7. Jak botnet Mirai przejmował urządzenia?</summary><p>logował się fabrycznymi (domyślnymi) hasłami</p></details>
+      <details><summary>8. Kiedy decyzja powinna zapadać na brzegu (edge), a nie w chmurze?</summary><p>gdy liczy się szybka reakcja albo urządzenie musi działać bez internetu</p></details>
+    </div>
+  </div>
+  <aside class="notes"><p>Wykład zdalny: czytaj pytanie, poproś o odpowiedzi na czacie, po kilkunastu sekundach odsłoń. Pytania 1, 3, 5 i 7 dobrze nadają się na kolokwium.</p></aside>
+</section>
+
+<!-- ================= 20. NARZĘDZIA ================= -->
+<section class="slide" id="s-tools">
+  <div class="kicker">Do samodzielnej pracy</div>
+  <h2>Pobaw się sam(a)</h2>
+  <div class="cols">
+    <div class="card"><h3>🔧 Wokwi <span class="tag">przeglądarka, bezpłatny</span></h3>
+      <p>symulator ESP32 i Arduino z czujnikami, wyświetlaczami i Wi-Fi — zbuduj urządzenie IoT bez kupowania sprzętu</p></div>
+    <div class="card"><h3>📨 MQTT Explorer <span class="tag">Windows / macOS / Linux</span></h3>
+      <p>podgląd drzewa tematów brokera MQTT — połącz się z <span class="mono">broker.hivemq.com</span> i zobacz, co publikują urządzenia na świecie</p></div>
+    <div class="card"><h3>📱 phyphox <span class="tag">telefon</span></h3>
+      <p>telefon jako urządzenie IoT: funkcja „zdalny dostęp" pokazuje odczyty czujników telefonu w przeglądarce komputera w tej samej sieci Wi-Fi</p></div>
+    <div class="card"><h3>🏠 Home Assistant · Node-RED</h3>
+      <p>otwarte oprogramowanie do automatyki domowej i łączenia urządzeń IoT „klockami"</p></div>
+  </div>
+  <aside class="notes">
+    <p><b>Pomysł na zadanie domowe:</b> w Wokwi zbudować „termometr IoT" (ESP32 + czujnik temperatury), który publikuje odczyt przez MQTT — w internecie jest wiele gotowych przykładów. Dla ambitnych.</p>
+    <p><b>phyphox</b> (dodatkowy pokaz, jeśli chcesz): w aplikacji wybierz np. „Akcelerometr", w menu „Zezwól na zdalny dostęp" — telefon pokaże adres, który wpisujesz w przeglądarce laptopa (oba urządzenia w tej samej sieci Wi-Fi). Potem udostępniasz ekran — studenci widzą na żywo, jak potrząsasz telefonem.</p>
+  </aside>
+</section>
+
+<!-- ================= SŁOWNICZEK (G) ================= -->
+<div id="gloss">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:1em">
+    <h2>Słowniczek dla prowadzącej — IoT</h2>
+    <div><button id="gl-print">🖨 drukuj</button> <button id="gl-close">✕ zamknij (G)</button></div>
+  </div>
+  <div id="gl-body">
+  <table>
+    <tr><th>Pojęcie</th><th>Co to jest</th></tr>
+    <tr><td><b>IoT / IIoT</b></td><td>Internet of Things / Industrial IoT — przedmioty z czujnikami i łącznością; IIoT — w przemyśle</td></tr>
+    <tr><td><b>czujnik / aktuator</b></td><td>czujnik mierzy (temperatura, ruch), aktuator działa (zawór, przekaźnik, silnik)</td></tr>
+    <tr><td><b>mikrokontroler</b></td><td>mały, tani komputer w jednym układzie (np. ESP32, Arduino)</td></tr>
+    <tr><td><b>bramka (gateway)</b></td><td>urządzenie łączące sieć czujników (Zigbee, LoRaWAN, BLE) z internetem</td></tr>
+    <tr><td><b>architektura 3-warstwowa</b></td><td>percepcji (urządzenia) → sieci (transmisja) → aplikacji (usługi)</td></tr>
+    <tr><td><b>edge / fog / cloud</b></td><td>przetwarzanie przy urządzeniu / „po drodze" / w centrum danych</td></tr>
+    <tr><td><b>LPWAN</b></td><td>Low Power Wide Area Network: duży zasięg (km), mało energii (lata na baterii), mało danych</td></tr>
+    <tr><td><b>LoRaWAN</b></td><td>LPWAN w paśmie nielicencjonowanym; własne bramki; zasięg ok. 2–5 km w mieście, kilkanaście km na wsi</td></tr>
+    <tr><td><b>NB-IoT / LTE-M</b></td><td>LPWAN w sieciach operatorów komórkowych (karta SIM); LTE-M szybszy i obsługuje ruch (pojazdy)</td></tr>
+    <tr><td><b>BLE</b></td><td>Bluetooth Low Energy — krótki zasięg, bardzo mało energii</td></tr>
+    <tr><td><b>Zigbee / Thread</b></td><td>sieci kratowe (siatka) dla domu; koordynator, routery (z gniazdka), urządzenia końcowe (bateria)</td></tr>
+    <tr><td><b>Matter</b></td><td>wspólny standard smart home (od X 2022) na Wi-Fi / Thread / Ethernet</td></tr>
+    <tr><td><b>MQTT</b></td><td>protokół publikuj–subskrybuj; broker; tematy (dom/salon/temperatura); + jeden poziom, # wszystko dalej</td></tr>
+    <tr><td><b>botnet / DDoS</b></td><td>sieć przejętych urządzeń / atak zalewający serwer ruchem</td></tr>
+  </table>
+  <h3>Typowe pytania studentów</h3>
+  <ul>
+    <li><b>Czy Alexa / Google Home to IoT?</b> Tak — urządzenie z czujnikiem (mikrofon), łącznością i chmurą (rozpoznawanie mowy). Często pełni też rolę „centrali" smart home.</li>
+    <li><b>Czym się różni Zigbee od Wi-Fi?</b> Wi-Fi: szybkie, ale prądożerne, gwiazda przez router. Zigbee: wolne (250 kb/s), oszczędne, siatka — czujniki działają latami na baterii.</li>
+    <li><b>LoRa a LoRaWAN?</b> LoRa — sposób nadawania radiowego; LoRaWAN — protokół sieci zbudowanej na LoRa.</li>
+    <li><b>Czy 5G jest dla IoT?</b> Tak, 5G przewiduje obsługę ogromnej liczby urządzeń, ale dziś w praktyce do czujników częściej używa się NB-IoT i LTE-M.</li>
+    <li><b>Czy MQTT jest bezpieczny?</b> Może być — z szyfrowaniem (TLS) i hasłami. Publiczny broker z wykładu jest celowo otwarty — tylko do testów.</li>
+  </ul>
+  <h3>Liczby (do ewentualnych pytań)</h3>
+  <p>Urządzenia IoT na świecie: ok. 18,5 mld (2024), prognoza ok. 40 mld (2030) — IoT Analytics. Mirai: atak na Dyn 21.10.2016, ok. 1,2 Tb/s. Zigbee: 250 kb/s.</p>
+  </div>
+</div>
+
+<div id="notes"></div>
+<div id="bar">
+  <button id="b-prev" title="poprzedni">◀</button>
+  <button id="b-next" title="następny">▶</button>
+  <div id="prog"><div></div></div>
+  <span id="cnt"></span>
+  <button id="b-gloss" title="słowniczek (G)">📖</button>
+  <button id="b-notes" title="notatki (N)">📝</button>
+  <button id="b-spk" title="okno prowadzącej (S)">🗔</button>
+  <button id="b-theme" title="motyw (T)">◐</button>
+  <button id="b-fs" title="pełny ekran (F)">⛶</button>
+</div>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const TAU=Math.PI*2;
+const pl=(x,d)=>x.toFixed(d).replace('.',',');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------------- motyw / kolory ---------------- */
+try{const t=localStorage.getItem('iot-theme'); if(t) document.documentElement.dataset.theme=t;}catch(e){}
+function toggleTheme(){const r=document.documentElement; r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';
+  try{localStorage.setItem('iot-theme',r.dataset.theme)}catch(e){}}
+let C={};
+function readColors(){const s=getComputedStyle(document.documentElement);
+  for(const k of ['bg','panel','fg','muted','grid','accent','accent2','accent3','danger','violet','gold','chip']) C[k]=s.getPropertyValue('--'+k).trim();}
+
+/* ---------------- rysowanie ---------------- */
+function fit(c){
+  const r=c.getBoundingClientRect(), d=window.devicePixelRatio||1;
+  const w=Math.max(1,Math.round(r.width*d)), h=Math.max(1,Math.round(r.height*d));
+  if(c.width!==w||c.height!==h){c.width=w;c.height=h;}
+  const g=c.getContext('2d'); g.setTransform(d,0,0,d,0,0); g.clearRect(0,0,r.width,r.height);
+  return {g,w:r.width,h:r.height};
+}
+const FONT='system-ui,-apple-system,"Segoe UI",sans-serif';
+function text(g,s,x,y,col,size=16,align='left',weight=600){ g.fillStyle=col; g.font=`${weight} ${size}px ${FONT}`; g.textAlign=align; g.textBaseline='middle'; g.fillText(s,x,y); }
+function label(g,s,x,y,col,size=15,align='center',bg){ g.font=`600 ${size}px ${FONT}`; const tw=g.measureText(s).width, x0=align==='right'?x-tw:align==='center'?x-tw/2:x;
+  g.fillStyle=bg||C.panel; g.globalAlpha=.94; rrect(g,x0-7,y-size*0.78,tw+14,size*1.56,6,bg||C.panel,null); g.globalAlpha=1; text(g,s,x,y,col,size,align); }
+function emoji(g,s,x,y,size){ g.font=`${size}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`; g.textAlign='center'; g.textBaseline='middle'; g.fillStyle=C.fg; g.fillText(s,x,y); }
+function dot(g,x,y,r,col){ g.beginPath(); g.arc(x,y,r,0,TAU); g.fillStyle=col; g.fill(); }
+function line(g,x1,y1,x2,y2,col,lw=2,dash=null,off=0){ g.strokeStyle=col; g.lineWidth=lw; g.setLineDash(dash||[]); g.lineDashOffset=off; g.beginPath(); g.moveTo(x1,y1); g.lineTo(x2,y2); g.stroke(); g.setLineDash([]); g.lineDashOffset=0; }
+function arrowHead(g,x,y,ang,col,s=11){ g.fillStyle=col; g.beginPath(); g.moveTo(x,y); g.lineTo(x-s*Math.cos(ang-0.45),y-s*Math.sin(ang-0.45)); g.lineTo(x-s*Math.cos(ang+0.45),y-s*Math.sin(ang+0.45)); g.closePath(); g.fill(); }
+function rrect(g,x,y,w,h,r,fill,stroke,lw=2){ g.beginPath(); g.roundRect?g.roundRect(x,y,w,h,r):g.rect(x,y,w,h); if(fill){g.fillStyle=fill; g.fill();} if(stroke){g.strokeStyle=stroke; g.lineWidth=lw; g.stroke();} }
+const lerp=(a,b,t)=>a+(b-a)*t;
+function choice(sel,attr,init,onChange){ const bs=$$(sel); const set=v=>{bs.forEach(b=>b.classList.toggle('sel',b.dataset[attr]===v)); onChange(v);}; bs.forEach(b=>b.addEventListener('click',()=>set(b.dataset[attr]))); set(init); }
+// ruch po łamanej: pts=[{x,y}], f∈[0,1]
+function along(pts,f){ const n=pts.length-1; if(n<=0) return pts[0]; const k=Math.min(n-1,Math.floor(f*n)), u=f*n-k; return {x:lerp(pts[k].x,pts[k+1].x,u),y:lerp(pts[k].y,pts[k+1].y,u)}; }
+
+const frame={}; let NOW=0;
+
+/* ===== 5. kalkulator baterii ===== */
+const BT_TECH=[['Wi-Fi',0.15,3,'#d23b3b'],['NB-IoT',0.22,1.5,'#e2741d'],['LoRaWAN',0.045,1.0,'#1f9a5a'],['Zigbee',0.03,0.02,'#1f6fd1'],['BLE',0.008,0.005,'#7a4cc9']];
+const SLEEP=5e-6;
+const btInt=()=>Math.pow(10,+$('#bt-int').value/1000*Math.log10(86400)); // 1 s .. 24 h
+const fmtInt=s=>s<60?Math.round(s)+' s':s<3600?Math.round(s/60)+' min':pl(s/3600,s<36000?1:0)+' h';
+function btLife(I,t,cap,iv){ const tt=Math.min(t,iv); const avg=SLEEP+I*tt/iv; return cap/1000/avg/24/365; } // lata
+$('#bt-int').addEventListener('input',()=>$('#bt-iv').textContent=fmtInt(btInt())); $('#bt-iv').textContent=fmtInt(btInt());
+const fmtLife=y=>y>=10?'≥ 10 lat*':y>=1?pl(y,1)+' lat':y*365>=30?Math.round(y*12)+' mies.':y*365>=1?Math.round(y*365)+' dni':Math.round(y*365*24)+' h';
+frame['s-device']=()=>{
+  const {g,w,h}=fit($('#cv-bat')); const iv=btInt(), cap=+$('#bt-bat').value, L=Math.min(130,w*0.12), bw=w-L-110, n=BT_TECH.length, rh=(h-20)/n;
+  const sx=y=>Math.max(0,Math.log10(Math.max(y*24*365,1))/Math.log10(10*24*365)); // skala log: 1 h .. 10 lat
+  [['1 dzień',1/365],['1 mies.',1/12],['1 rok',1],['10 lat',10]].forEach(([s,y])=>{ const x=L+bw*sx(y); line(g,x,6,x,h-14,C.grid,1,[4,4]); text(g,s,x,h-6,C.muted,11,'center',600); });
+  BT_TECH.forEach(([nm,I,t,col],i)=>{ const y=10+i*rh, bh=rh*0.6, life=btLife(I,t,cap,iv), lw=bw*Math.min(1,sx(Math.min(life,10)));
+    text(g,nm,8,y+bh/2,C.fg,15,'left',700); rrect(g,L,y,bw,bh,6,C.chip,null); rrect(g,L,y,Math.max(4,lw),bh,6,col,null);
+    text(g,fmtLife(life),L+Math.max(4,lw)+10,y+bh/2,C.fg,16,'left',800); });
+};
+$('#bt-bat').addEventListener('change',()=>{});
+
+/* ===== 7. podróż pomiaru ===== */
+let JR=null;
+$('#jr-h').addEventListener('input',()=>$('#jr-hv').textContent=$('#jr-h').value+'%'); $('#jr-hv').textContent=$('#jr-h').value+'%';
+$('#jr-go').addEventListener('click',()=>{ JR={t0:NOW,h:+$('#jr-h').value}; });
+const LAYERS=[['aplikacji','#1f6fd1'],['sieci','#1f9a5a'],['percepcji','#e2741d']];
+// element -> [emoji, nazwa, x, warstwa]
+const EL={sensor:['🌱','czujnik wilgotności',0.16,'percepcji'], valve:['🚰','zawór podlewania',0.84,'percepcji'],
+  gw:['📡','bramka LoRaWAN',0.32,'sieci'], net:['🌐','internet',0.55,'sieci'],
+  cloud:['☁️','chmura: baza + reguła',0.5,'aplikacji'], app:['📱','aplikacja',0.82,'aplikacji']};
+frame['s-journey']=t=>{
+  const {g,w,h}=fit($('#cv-journey')); const ls=LAYERS, bh=h/ls.length, L=Math.min(150,w*0.13);
+  const yOf=name=>{const i=ls.findIndex(l=>l[0]===name); return i*bh+bh/2;};
+  ls.forEach(([nm,col],i)=>{ rrect(g,4,i*bh+3,w-8,bh-6,10,col+'14',col+'55',1.5); text(g,'warstwa',14,i*bh+bh/2-10,col,12,'left',600); text(g,nm,14,i*bh+bh/2+8,col,Math.min(17,L/8),'left',800); });
+  const P={}; for(const k in EL){ const [e,nm,x,lay]=EL[k];
+    const px=L+(w-L-20)*x, py=yOf(lay); P[k]={x:px,y:py};
+    emoji(g,e,px,py-6,Math.min(36,bh*0.45)); text(g,nm,px,py+Math.min(26,bh*0.32),C.fg,Math.min(14,w/90),'center',700); }
+  // połączenia
+  const pairs=[['sensor','gw'],['gw','net'],['net','cloud'],['cloud','app'],['net','valve']];
+  pairs.forEach(([a,b])=>line(g,P[a].x,P[a].y,P[b].x,P[b].y,C.grid,2,[5,5]));
+  if(JR){ const dt=t-JR.t0, up=[P.sensor,P.gw,P.net,P.cloud], down=[P.cloud,P.net,P.gw,P.valve], wet=JR.h>=30;
+    if(dt<2.2){ const p=along(up,dt/2.2); label(g,`💧 wilgotność ${JR.h}%`,p.x,p.y-30,'#fff',14,'center',C.accent2); }
+    else if(dt<3.4){ label(g,wet?`${JR.h}% ≥ 30% → nie podlewam`:`${JR.h}% < 30% → PODLEJ!`,P.cloud.x,P.cloud.y-38,'#fff',15,'center',wet?C.accent3:C.danger);
+      const p=along([P.cloud,P.app],Math.min(1,(dt-2.2)/0.8)); emoji(g,'📨',p.x,p.y-24,20); }
+    else if(!wet&&dt<5.6){ const p=along(down,(dt-3.4)/2.2); label(g,'⬇ otwórz zawór',p.x,p.y-30,'#fff',14,'center',C.accent); }
+    if(dt>=2.2&&dt<9){ label(g,`wilgotność ${JR.h}%`+(wet?' ✔':' ⚠'),P.app.x,P.app.y-38,C.fg,13,'center'); }
+    if(!wet&&dt>=5.6&&dt<9){ emoji(g,'💦',P.valve.x+34,P.valve.y-14,28); label(g,'zawór otwarty',P.valve.x,P.valve.y-38,C.accent3,13); }
+  }
+};
+
+/* ===== 8. edge vs chmura ===== */
+let ED=null;
+$('#ed-cloud').addEventListener('click',()=>{ED={mode:'cloud',t0:NOW};});
+$('#ed-edge').addEventListener('click',()=>{ED={mode:'edge',t0:NOW};});
+frame['s-edge']=t=>{
+  const {g,w,h}=fit($('#cv-edge')); const down=$('#ed-down').checked;
+  const N={smoke:{x:w*0.08,y:h*0.72,e:'🔥',n:'czujnik dymu'}, edge:{x:w*0.3,y:h*0.72,e:'🧠',n:'sterownik lokalny (edge)'},
+    router:{x:w*0.3,y:h*0.3,e:'📶',n:'router w budynku'}, net:{x:w*0.58,y:h*0.22,e:'🌐',n:'internet'}, cloud:{x:w*0.86,y:h*0.22,e:'☁️',n:'chmura'},
+    spr:{x:w*0.55,y:h*0.72,e:'💦',n:'zraszacze'}};
+  rrect(g,w*0.02,h*0.5,w*0.62,h*0.46,14,C.chip,C.grid,1.5); text(g,'MAGAZYN',w*0.04,h*0.55,C.muted,13,'left',800);
+  const links=[['smoke','edge'],['edge','spr'],['smoke','router'],['router','net'],['net','cloud'],['router','spr']];
+  links.forEach(([a,b])=>line(g,N[a].x,N[a].y,N[b].x,N[b].y,(down&&(a==='router'&&b==='net'))?C.danger:C.grid,2,[5,5]));
+  if(down){ const mx=(N.router.x+N.net.x)/2, my=(N.router.y+N.net.y)/2; emoji(g,'❌',mx,my,26); }
+  for(const k in N){ emoji(g,N[k].e,N[k].x,N[k].y-4,34); text(g,N[k].n,N[k].x,N[k].y+30,C.fg,13,'center',700); }
+  if(!ED){ label(g,'kliknij przycisk powyżej',w*0.5,h*0.08,C.muted,14); return; }
+  const segs=ED.mode==='edge'?[['smoke','edge',2],['edge','edge',1],['edge','spr',2]]
+    :[['smoke','router',2],['router','net',10],['net','cloud',40],['cloud','cloud',20],['cloud','net',40],['net','router',10],['router','spr',2]];
+  const segT=0.45, dt=t-ED.t0; let k=Math.floor(dt/segT), u=dt/segT-k, simMs=0, stopped=false;
+  if(down&&ED.mode==='cloud'&&k>=1){ k=1; u=0.5; stopped=true; }
+  for(let i=0;i<Math.min(k,segs.length);i++) simMs+=segs[i][2];
+  if(k<segs.length){ const [a,b,ms]=segs[k]; simMs+=ms*(stopped?0.5:u); const p={x:lerp(N[a].x,N[b].x,u),y:lerp(N[a].y,N[b].y,u)};
+    if(a===b) label(g,'⏳ analiza…',p.x,p.y-44,C.accent2,14); else dot(g,p.x,p.y,9,ED.mode==='edge'?C.accent3:C.accent); }
+  const done=k>=segs.length&&!stopped;
+  if(done) emoji(g,'💦',N.spr.x+40,N.spr.y-10,30);
+  const msg=stopped?`⏱ ${Math.round(simMs)} ms… i dalej nic — brak internetu, chmura nie odpowie! 🔥`
+    :done?`✔ zraszacze włączone po ok. ${Math.round(simMs)} ms (${ED.mode==='edge'?'decyzja lokalna':'decyzja w chmurze'})`:`⏱ ${Math.round(simMs)} ms`;
+  label(g,msg,w*0.5,h*0.08,stopped?C.danger:done?C.accent3:C.fg,Math.min(18,w/60));
+};
+
+/* ===== 9. trójkąt ===== */
+const TRI=new Set(['range','power']);
+const TRIN={range:'duży zasięg',rate:'duża przepływność',power:'małe zużycie energii'};
+const TRIA={'range+rate':['4G / 5G, LTE-M','daleko i szybko — ale bateria wystarczy na krótko (zasilanie z sieci, samochód, kamera)'],
+  'power+range':['LoRaWAN, NB-IoT','kilometry i lata na baterii — ale tylko po kilka bajtów (liczniki, czujniki w polu)'],
+  'power+rate':['BLE, Zigbee, Thread (a z zasilaniem z sieci — Wi-Fi)','szybko i oszczędnie — ale tylko na kilka–kilkadziesiąt metrów (dom, ciało)']};
+function triUpd(){ $$('#s-triangle [data-tri]').forEach(b=>b.classList.toggle('sel',TRI.has(b.dataset.tri)));
+  const key=[...TRI].sort().join('+'); const a=TRIA[key];
+  $('#tri-info').innerHTML=a?`<b>${[...TRI].map(k=>TRIN[k]).join(' + ')}</b> → <b style="color:var(--accent)">${a[0]}</b>: ${a[1]}`:'Wybierz <b>dwie</b> cechy.'; }
+$$('#s-triangle [data-tri]').forEach(b=>b.addEventListener('click',()=>{ const k=b.dataset.tri;
+  if(TRI.has(k)) TRI.delete(k); else { if(TRI.size>=2) TRI.delete([...TRI][0]); TRI.add(k);} triUpd(); }));
+triUpd();
+frame['s-triangle']=()=>{
+  const {g,w,h}=fit($('#cv-tri')); const cx=w/2, R=Math.min(h*0.42,w*0.3), cy=h*0.56;
+  const V={range:{x:cx,y:cy-R,e:'📏'},rate:{x:cx-R*0.95,y:cy+R*0.55,e:'🚀'},power:{x:cx+R*0.95,y:cy+R*0.55,e:'🔋'}};
+  const edges=[['range','rate'],['rate','power'],['power','range']], key=[...TRI].sort().join('+');
+  edges.forEach(([a,b])=>{ const on=[a,b].sort().join('+')===key; line(g,V[a].x,V[a].y,V[b].x,V[b].y,on?C.accent:C.grid,on?7:3);
+    const mx=(V[a].x+V[b].x)/2, my=(V[a].y+V[b].y)/2, ox=(mx-cx)*0.35, oy=(my-cy)*0.35, A=TRIA[[a,b].sort().join('+')];
+    label(g,A[0].split(' (')[0],mx+ox,my+oy,on?'#fff':C.muted,on?17:14,'center',on?C.accent:null); });
+  for(const k in V){ const on=TRI.has(k); dot(g,V[k].x,V[k].y,36,on?C.accent:C.chip); emoji(g,V[k].e,V[k].x,V[k].y,30);
+    text(g,TRIN[k],V[k].x,V[k].y+(k==='range'?-50:52),on?C.accent:C.muted,16,'center',800); }
+};
+
+/* ===== 10. mapa technologii ===== */
+// [nazwa, zasięg min,max (m), przepływność min,max (b/s), energia 0..2, opis, zastosowania]
+const TECH=[
+  ['NFC',0.02,0.1,1.06e5,4.24e5,0,'komunikacja zbliżeniowa — kilka cm; jedna strona może być pasywna (bez baterii)','płatności zbliżeniowe, bilety, karty dostępu, parowanie urządzeń'],
+  ['RFID',0.1,10,4e4,6.4e5,0,'etykiety radiowe; pasywny znacznik nie ma baterii — zasila go fala czytnika','identyfikacja towarów, magazyny, karnety, znakowanie zwierząt'],
+  ['BLE',1,50,1.25e5,2e6,0,'Bluetooth Low Energy — krótki zasięg, bardzo mało energii, zwykle gwiazda wokół telefonu','opaski, zegarki, czujniki zdrowia, lokalizatory, sprzęt medyczny'],
+  ['Zigbee / Thread',10,30,2e4,2.5e5,0,'sieci kratowe (mesh) na 2,4 GHz; 250 kb/s; routery z gniazdka przekazują dalej','inteligentny dom: żarówki, czujniki, gniazdka (Thread — także w standardzie Matter)'],
+  ['Z-Wave',10,40,9.6e3,1e5,0,'sieć kratowa smart home w paśmie poniżej 1 GHz (w Europie 868 MHz) — mniej zakłóceń niż 2,4 GHz','alarmy, zamki, rolety, systemy domowe'],
+  ['Wi-Fi',10,100,1e7,2e9,2,'szybkie, wszędzie dostępne — ale prądożerne; gwiazda wokół routera','kamery, telewizory, urządzenia z zasilaniem z gniazdka'],
+  ['LoRaWAN',2000,15000,3e2,5e4,0,'LPWAN; własne bramki; ok. 2–5 km w mieście, kilkanaście km na otwartym terenie; lata na baterii','rolnictwo, liczniki, parkingi, monitoring środowiska'],
+  ['NB-IoT',1000,10000,2e4,2.5e5,1,'LPWAN w sieci operatora komórkowego (karta SIM); dobrze przenika budynki i piwnice','wodomierze, gazomierze, czujniki w budynkach'],
+  ['LTE-M',1000,10000,3e5,1e6,1,'LPWAN operatora — szybszy niż NB-IoT, obsługuje ruch i przełączanie stacji bazowych','śledzenie pojazdów i przesyłek, urządzenia noszone'],
+  ['4G / 5G',1000,10000,1e7,2e9,2,'pełne sieci komórkowe — duża przepływność i zasięg, dużo energii','kamery, samochody, maszyny, routery mobilne']
+];
+const ECOL=()=>[C.accent3,C.gold,C.danger], ENAME=['mało energii','średnio','dużo energii'];
+let TECHSEL=6, TECHR=[];
+function techCard(i){ const t=TECH[i]; const fr=r=>r>=1e9?pl(r/1e9,0)+' Gb/s':r>=1e6?pl(r/1e6,r<1e7?1:0)+' Mb/s':r>=1e3?pl(r/1e3,r<1e4?1:0)+' kb/s':r+' b/s';
+  const fd=d=>d>=1000?pl(d/1000,0)+' km':d>=1?pl(d,0)+' m':pl(d*100,0)+' cm';
+  $('#tech-card').innerHTML=`<h3>${t[0]}</h3><p>${t[6]}</p><p><b>zasięg:</b> ${fd(t[1])} – ${fd(t[2])}</p><p><b>przepływność:</b> ${fr(t[3])} – ${fr(t[4])}</p><p><b>energia:</b> <span style="color:${ECOL()[t[5]]};font-weight:700">${ENAME[t[5]]}</span></p><p class="muted"><b>zastosowania:</b> ${t[7]}</p><p class="muted" style="font-size:.85em">wartości orientacyjne — zależą od warunków i wersji standardu</p>`; }
+$('#cv-tech').addEventListener('click',e=>{ const r=$('#cv-tech').getBoundingClientRect(), x=e.clientX-r.left, y=e.clientY-r.top;
+  let best=-1, area=1e18; TECHR.forEach((q,i)=>{ if(x>=q.x&&x<=q.x+q.w&&y>=q.y&&y<=q.y+q.h&&q.w*q.h<area){area=q.w*q.h;best=i;} }); if(best>=0){TECHSEL=best; readColors(); techCard(best);} });
+frame['s-techmap']=()=>{
+  const {g,w,h}=fit($('#cv-tech')); const L=56,B=40,T=18,Rm=14, pw=w-L-Rm, ph=h-B-T;
+  const X=d=>L+pw*(Math.log10(d)+2)/7, Y=r=>T+ph-ph*(Math.log10(r)-2)/8; // 1 cm..100 km ; 100 b/s..10 Gb/s
+  [[0.01,'1 cm'],[0.1,'10 cm'],[1,'1 m'],[10,'10 m'],[100,'100 m'],[1000,'1 km'],[10000,'10 km'],[100000,'100 km']].forEach(([d,s])=>{ const x=X(d); line(g,x,T,x,T+ph,C.grid,1); text(g,s,x,h-B+14,C.muted,11,'center',600); });
+  [[1e2,'100 b/s'],[1e3,'1 kb/s'],[1e4,'10 kb/s'],[1e5,'100 kb/s'],[1e6,'1 Mb/s'],[1e7,'10 Mb/s'],[1e8,'100 Mb/s'],[1e9,'1 Gb/s'],[1e10,'10 Gb/s']].forEach(([r,s])=>{ const y=Y(r); line(g,L,y,L+pw,y,C.grid,1); text(g,s,L-4,y,C.muted,10,'right',600); });
+  text(g,'zasięg →',L+pw,h-8,C.muted,12,'right',700); text(g,'↑ przepływność',L+4,T+8,C.muted,12,'left',700);
+  const ec=ECOL(); TECHR=[];
+  TECH.forEach((t,i)=>{ const x1=X(t[1]),x2=X(t[2]),y1=Y(t[4]),y2=Y(t[3]); const q={x:x1,y:y1,w:Math.max(10,x2-x1),h:Math.max(10,y2-y1)}; TECHR.push(q);
+    const sel=i===TECHSEL; rrect(g,q.x,q.y,q.w,q.h,8,ec[t[5]]+(sel?'88':'38'),sel?C.fg:ec[t[5]],sel?3:1.5); });
+  TECH.forEach((t,i)=>{ const q=TECHR[i]; label(g,t[0],q.x+q.w/2,q.y+q.h/2,i===TECHSEL?C.fg:C.fg,Math.min(14,w/70),'center'); });
+};
+techCard(TECHSEL);
+
+/* ===== 11. gra: dobierz technologię ===== */
+const GAME=[
+  {q:'💧 Czujnik zalania w piwnicy domu', d:'na baterii, ma działać latami; w domu jest już bramka smart home',
+   o:{'Zigbee / Thread':['ok','Idealnie: oszczędny, sieć kratowa w domu, bateria na lata.'],'Wi-Fi':['maybe','Zadziała, ale bateria wystarczy na krótko — Wi-Fi jest prądożerne.'],'LoRaWAN':['maybe','Zadziała (świetnie przenika ściany), ale to armata na wróbla — wymaga bramki LoRaWAN.'],'5G':['no','Za drogie i prądożerne dla prostego czujnika.']}},
+  {q:'🚰 Wodomierze w 500 mieszkaniach na osiedlu', d:'odczyt raz dziennie, bateria na 10 lat, liczniki w piwnicach i szafkach',
+   o:{'NB-IoT':['ok','Bardzo dobrze: sieć operatora, przenika budynki, lata na baterii.'],'LoRaWAN':['ok','Też bardzo dobrze: kilka bramek obsłuży całe osiedle.'],'Wi-Fi':['no','Nie ma Wi-Fi w każdej piwnicy, a bateria nie wytrzyma.'],'BLE':['no','Za mały zasięg — ktoś musiałby chodzić z telefonem pod każdy licznik.']}},
+  {q:'📹 Kamera w ogrodzie z podglądem na żywo', d:'zasilana z sieci, kilkanaście metrów od domu',
+   o:{'Wi-Fi':['ok','Tak: obraz wideo potrzebuje dużej przepływności, a zasilanie jest.'],'LoRaWAN':['no','Za mała przepływność — wideo się nie zmieści (kilka kb/s).'],'Zigbee / Thread':['no','250 kb/s to za mało na płynne wideo.'],'4G / 5G':['maybe','Możliwe, gdy w ogrodzie nie ma Wi-Fi — ale abonament i większe zużycie energii.']}},
+  {q:'⌚ Opaska sportowa przesyłająca puls do telefonu', d:'mała bateria, telefon zawsze blisko',
+   o:{'BLE':['ok','Dokładnie do tego stworzono Bluetooth Low Energy.'],'Wi-Fi':['no','Za prądożerne dla małej opaski.'],'NB-IoT':['maybe','Istnieją takie opaski (np. dla seniorów, bez telefonu), ale do współpracy z telefonem — BLE.'],'NFC':['no','Działa tylko na kilka centymetrów.']}},
+  {q:'🌾 Czujnik wilgotności na polu 5 km od wsi', d:'brak prądu, brak Wi-Fi, zasięg komórkowy słaby',
+   o:{'LoRaWAN':['ok','Tak: kilkanaście km zasięgu na otwartym terenie, własna bramka na budynku gospodarstwa.'],'NB-IoT':['maybe','Dobre, jeśli operator ma tam zasięg — w scenariuszu zasięg jest słaby.'],'Zigbee / Thread':['no','Kilkadziesiąt metrów zasięgu — trzeba by setek routerów.'],'Wi-Fi':['no','Za mały zasięg i za duże zużycie energii.']}},
+  {q:'🚚 Śledzenie palet w ciężarówkach jeżdżących po Europie', d:'urządzenie w ruchu, raport co kilka minut',
+   o:{'LTE-M':['ok','Tak: obsługuje ruch i przełączanie między stacjami bazowymi, działa w roamingu.'],'NB-IoT':['maybe','Gorzej radzi sobie z szybkim ruchem pojazdu.'],'LoRaWAN':['maybe','Zadziała tylko tam, gdzie są bramki — na trasie przez Europę ich zabraknie.'],'BLE':['no','Kilkadziesiąt metrów — tylko do odczytu na rampie magazynu.']}},
+  {q:'🎫 Bilet komunikacji miejskiej w telefonie', d:'kasownik przy drzwiach autobusu',
+   o:{'NFC':['ok','Tak: zbliżenie telefonu na kilka cm — jak płatność kartą.'],'Wi-Fi':['no','Za duży zasięg — kasownik nie wiedziałby, czyj to telefon.'],'LoRaWAN':['no','Zupełnie nie ten zasięg ani zastosowanie.'],'BLE':['maybe','Bywa używany (np. „wykrywanie" pasażera), ale standardem przy kasownikach jest NFC.']}}
+];
+let GI=0;
+function gameShow(){ const s=GAME[GI]; $('#gm-cnt').textContent=`${GI+1} / ${GAME.length}`; $('#gm-q').textContent=s.q; $('#gm-d').textContent=s.d;
+  $('#gm-ans').textContent='Wybierz odpowiedź — albo najpierw zapytaj studentów na czacie.';
+  const box=$('#gm-opts'); box.innerHTML=''; Object.keys(s.o).forEach(k=>{ const b=document.createElement('button'); b.textContent=k; b.style.fontSize='clamp(16px,1.5vw,26px)';
+    b.onclick=()=>{ const [v,ex]=s.o[k]; b.className=v; $('#gm-ans').innerHTML=(v==='ok'?'✅ <b>Dobry wybór.</b> ':v==='maybe'?'🟡 <b>Możliwe, ale…</b> ':'❌ <b>Zły pomysł.</b> ')+ex; };
+    box.appendChild(b); }); }
+$('#gm-next').onclick=()=>{GI=(GI+1)%GAME.length; gameShow();}; $('#gm-prev').onclick=()=>{GI=(GI-1+GAME.length)%GAME.length; gameShow();};
+gameShow();
+
+/* ===== 12. Zigbee mesh ===== */
+const ZR=7.2; // zasięg [m]
+const ZN=[
+  {id:'K',kind:'coord',e:'🟧',n:'bramka',x:2,y:5},
+  {id:'R1',kind:'router',e:'💡',n:'lampa przedpokój',x:6,y:3},
+  {id:'R2',kind:'router',e:'🔌',n:'gniazdko salon',x:10,y:7},
+  {id:'R3',kind:'router',e:'💡',n:'lampa kuchnia',x:13,y:3},
+  {id:'R4',kind:'router',e:'🔌',n:'gniazdko sypialnia',x:16.5,y:6.5},
+  {id:'R5',kind:'router',e:'💡',n:'lampa łazienka',x:10,y:1.5},
+  {id:'E1',kind:'end',e:'🚪',n:'czujnik drzwi',x:3,y:8.5},
+  {id:'E2',kind:'end',e:'🌡️',n:'termometr sypialnia',x:19,y:9},
+  {id:'E3',kind:'end',e:'💧',n:'czujnik zalania',x:12,y:0.6},
+  {id:'E4',kind:'end',e:'🏃',n:'czujnik ruchu kuchnia',x:16,y:1.5}
+];
+const ZOFF=new Set(); let ZPATH=null;
+const zd=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function zRoute(i){ // trasa od urządzenia i do koordynatora (indeksy) albo null
+  const on=j=>!ZOFF.has(j), infra=ZN.map((n,j)=>j).filter(j=>ZN[j].kind!=='end'&&on(j));
+  let start=[i]; if(ZN[i].kind==='end'){ const par=infra.filter(j=>zd(ZN[i],ZN[j])<=ZR).sort((a,b)=>zd(ZN[i],ZN[a])-zd(ZN[i],ZN[b]))[0]; if(par==null) return null; start=[i,par]; }
+  else if(!on(i)) return null;
+  const s=start[start.length-1], prev={[s]:-1}, q=[s];
+  while(q.length){ const u=q.shift(); if(ZN[u].kind==='coord') { const p=[]; let v=u; while(v!==-1){p.push(v); v=prev[v];} p.reverse(); return start.slice(0,-1).concat(p); }
+    for(const v of infra) if(!(v in prev)&&zd(ZN[u],ZN[v])<=ZR){ prev[v]=u; q.push(v);} }
+  return null;
+}
+function zInfo(){ const lost=ZN.map((n,i)=>i).filter(i=>ZN[i].kind==='end'&&!zRoute(i)).map(i=>ZN[i].n);
+  $('#zg-info').innerHTML=(ZPATH?(ZPATH.path?`trasa: <b>${ZPATH.path.map(i=>ZN[i].n).join(' → ')}</b> (${ZPATH.path.length-1} skok${ZPATH.path.length-1===1?'':'i'})`:`<span class="bad">❌ ${esc(ZN[ZPATH.from].n)}: brak połączenia z bramką</span>`)+' · ':'')+
+    (lost.length?`<span class="bad">bez łączności: ${lost.join(', ')}</span>`:'<span class="good">wszystkie czujniki mają łączność</span>'); }
+function zPos(w,h){ const pad=50, sx=(w-2*pad)/20, sy=(h-2*pad)/10; return ZN.map(n=>({x:pad+n.x*sx,y:pad+n.y*sy,s:Math.min(sx,sy)})); }
+$('#cv-zig').addEventListener('click',e=>{ const r=$('#cv-zig').getBoundingClientRect(), x=e.clientX-r.left, y=e.clientY-r.top, P=zPos(r.width,r.height);
+  let hit=-1,bd=34; P.forEach((p,i)=>{const d=Math.hypot(p.x-x,p.y-y); if(d<bd){bd=d;hit=i;}}); if(hit<0) return;
+  const n=ZN[hit]; if(n.kind==='router'){ ZOFF.has(hit)?ZOFF.delete(hit):ZOFF.add(hit); ZPATH=null; }
+  else if(n.kind==='end'){ ZPATH={from:hit,path:zRoute(hit),t0:NOW}; }
+  zInfo(); });
+$('#zg-fix').addEventListener('click',()=>{ZOFF.clear(); ZPATH=null; zInfo();});
+zInfo();
+frame['s-mesh']=t=>{
+  const {g,w,h}=fit($('#cv-zig')); const P=zPos(w,h), rng=$('#zg-range').checked;
+  // plan mieszkania
+  rrect(g,P[0].x-36,24,w-(P[0].x-36)-14,h-40,10,null,C.grid,2);
+  [['przedpokój',0.2],['salon',0.48],['kuchnia',0.66],['sypialnia',0.86]].forEach(([s,f])=>text(g,s,w*f,h-26,C.muted,12,'center',700));
+  // połączenia między infrastrukturą
+  ZN.forEach((a,i)=>ZN.forEach((b,j)=>{ if(j<=i||a.kind==='end'||b.kind==='end') return; if(zd(a,b)<=ZR){ const off=ZOFF.has(i)||ZOFF.has(j); line(g,P[i].x,P[i].y,P[j].x,P[j].y,off?C.grid:C.accent+'66',off?1:2.5,off?[4,6]:null);} }));
+  // czujnik -> rodzic
+  ZN.forEach((n,i)=>{ if(n.kind!=='end') return; const r=zRoute(i); if(r&&r.length>1) line(g,P[i].x,P[i].y,P[r[1]].x,P[r[1]].y,C.muted,1.5,[3,4]); });
+  if(rng) ZN.forEach((n,i)=>{ if(n.kind==='end'||ZOFF.has(i)) return; g.beginPath(); g.arc(P[i].x,P[i].y,ZR*P[i].s,0,TAU); g.fillStyle=C.accent+'0d'; g.fill(); g.strokeStyle=C.accent+'40'; g.lineWidth=1; g.stroke(); });
+  if(ZPATH&&ZPATH.path){ const pts=ZPATH.path.map(i=>P[i]); for(let k=0;k<pts.length-1;k++) line(g,pts[k].x,pts[k].y,pts[k+1].x,pts[k+1].y,C.accent2,5);
+    const f=((t-ZPATH.t0)/(0.5*(pts.length-1)))%1.6; if(f<=1){ const p=along(pts,f); emoji(g,'✉️',p.x,p.y-4,22);} }
+  ZN.forEach((n,i)=>{ const p=P[i], off=ZOFF.has(i);
+    if(n.kind==='coord'){ rrect(g,p.x-22,p.y-22,44,44,8,C.accent2,null); text(g,'BRAMKA',p.x,p.y+34,C.accent2,12,'center',800); emoji(g,'📶',p.x,p.y,24); return; }
+    if(n.kind==='router'){ dot(g,p.x,p.y,22,off?C.grid:C.accent); emoji(g,off?'⭘':n.e,p.x,p.y,off?18:22); text(g,n.n+(off?' (wył.)':''),p.x,p.y+34,off?C.muted:C.fg,12,'center',700); return; }
+    const ok=!!zRoute(i); dot(g,p.x,p.y,19,C.panel); g.strokeStyle=ok?C.accent3:C.danger; g.lineWidth=3; g.beginPath(); g.arc(p.x,p.y,19,0,TAU); g.stroke();
+    emoji(g,n.e,p.x,p.y,20); text(g,n.n,p.x,p.y+31,ok?C.fg:C.danger,12,'center',700); });
+};
+
+/* ===== 13. MQTT symulacja ===== */
+const PUBS=[['🌡️','czujnik salon','dom/salon/temperatura',()=>pl(20+Math.random()*3,1)+' °C'],
+  ['💧','czujnik łazienka','dom/lazienka/wilgotnosc',()=>Math.round(50+Math.random()*30)+' %'],
+  ['🌡️','czujnik sypialnia','dom/sypialnia/temperatura',()=>pl(18+Math.random()*3,1)+' °C'],
+  ['🚪','czujnik drzwi','dom/wejscie/drzwi',()=>Math.random()<0.5?'otwarte':'zamknięte']];
+const SUBS=[['📱','aplikacja w telefonie','dom/#'],['🔥','termostat w salonie','dom/salon/temperatura'],['📋','panel temperatur','dom/+/temperatura'],['🔔','alarm','dom/wejscie/drzwi']];
+const FILTERS=['dom/#','dom/+/temperatura','dom/salon/#','dom/salon/temperatura','dom/lazienka/wilgotnosc','dom/wejscie/drzwi','dom/+/+','(nic)'];
+const SUBLAST=SUBS.map(()=>'');
+function mqMatch(f,t){ if(f==='(nic)') return false; const a=f.split('/'), b=t.split('/'); for(let i=0;i<a.length;i++){ if(a[i]==='#') return true; if(i>=b.length) return false; if(a[i]!=='+'&&a[i]!==b[i]) return false; } return a.length===b.length; }
+(function(){ const box=$('#mq-subs'); SUBS.forEach(([e,n,f],i)=>{ const l=document.createElement('label'); l.innerHTML=`<span>${e} ${n} subskrybuje:</span>`; const s=document.createElement('select'); s.id='mq-s'+i;
+  FILTERS.forEach(o=>{const op=document.createElement('option'); op.value=o; op.textContent=o; if(o===f) op.selected=true; s.appendChild(op);}); l.appendChild(s); box.appendChild(l); }); })();
+const MQ=[]; let mqAuto=null;
+function mqPub(i){ const [e,n,topic,val]=PUBS[i]; const payload=val(); const targets=SUBS.map((s,j)=>j).filter(j=>mqMatch($('#mq-s'+j).value,topic)); MQ.push({i,topic,payload,targets,t0:NOW}); if(MQ.length>12) MQ.shift(); }
+$$('#s-mqtt [data-pub]').forEach(b=>b.addEventListener('click',()=>mqPub(+b.dataset.pub)));
+$('#mq-auto').addEventListener('click',()=>{ if(mqAuto){clearInterval(mqAuto); mqAuto=null; $('#mq-auto').classList.remove('on'); $('#mq-auto').textContent='▶ automatycznie';}
+  else { mqAuto=setInterval(()=>{ if(slides[cur].id==='s-mqtt') mqPub(Math.floor(Math.random()*4)); },1400); $('#mq-auto').classList.add('on'); $('#mq-auto').textContent='■ stop'; } });
+frame['s-mqtt']=t=>{
+  const {g,w,h}=fit($('#cv-mqtt')); const px=w*0.12, bx=w*0.5, sx=w*0.86, by=h/2;
+  const py=i=>h*(i+0.5)/4;
+  rrect(g,bx-70,by-46,140,92,14,C.violet,null); text(g,'BROKER',bx,by-10,'#fff',18,'center',800); text(g,'rozsyła wg tematów',bx,by+16,'#fff',12,'center',600);
+  PUBS.forEach(([e,n,topic],i)=>{ line(g,px+30,py(i),bx-70,by,C.grid,1.5); emoji(g,e,px,py(i)-6,26); text(g,n,px,py(i)+18,C.fg,12,'center',700); text(g,topic,px+34,py(i)-6,C.muted,11,'left',600); });
+  SUBS.forEach(([e,n],i)=>{ const f=$('#mq-s'+i).value; line(g,bx+70,by,sx-30,py(i),C.grid,1.5); emoji(g,e,sx,py(i)-8,26); text(g,n,sx,py(i)+16,C.fg,12,'center',700);
+    text(g,'sub: '+f,sx-34,py(i)-8,C.accent,11,'right',700); if(SUBLAST[i]) label(g,SUBLAST[i],sx,py(i)+34,C.accent3,12); });
+  for(const m of MQ){ const dt=t-m.t0;
+    if(dt<0.7){ const f=dt/0.7, x=lerp(px+30,bx-70,f), y=lerp(py(m.i),by,f); label(g,m.payload,x,y-14,'#fff',12,'center',C.accent2); }
+    else if(dt<1.5){ const f=(dt-0.7)/0.8; if(!m.targets.length&&f<0.6) label(g,'nikt nie subskrybuje',bx,by+62,C.muted,12);
+      m.targets.forEach(j=>{ const x=lerp(bx+70,sx-30,f), y=lerp(by,py(j),f); label(g,m.payload,x,y-14,'#fff',12,'center',C.accent3); }); }
+    else if(!m.done){ m.done=true; m.targets.forEach(j=>SUBLAST[j]=`${m.topic.split('/').slice(1).join('/')}: ${m.payload}`); }
+  }
+};
+
+/* ===== 14. MQTT na żywo ===== */
+const LV={code:Math.random().toString(36).slice(2,6).toUpperCase(),client:null};
+$$('.lv-code').forEach(e=>e.textContent=LV.code);
+function lvAdd(topic,msg){ const b=$('#lv-board'), d=document.createElement('div'); const who=topic.split('/').slice(2).join('/')||'?';
+  d.innerHTML=`<span class="tp">${esc(who.slice(0,30))}:</span> ${esc(String(msg).slice(0,140))}`; b.appendChild(d); b.scrollTop=b.scrollHeight; }
+function lvStat(s,cls){ $('#lv-stat').innerHTML=cls?`<span class="${cls}">${s}</span>`:s; }
+function loadMqttLib(){ return new Promise((res,rej)=>{ if(window.mqtt) return res(); const s=document.createElement('script'); s.src='https://unpkg.com/mqtt@5/dist/mqtt.min.js'; s.onload=()=>res(); s.onerror=()=>rej(new Error('lib')); document.head.appendChild(s); }); }
+$('#lv-conn').addEventListener('click',async()=>{
+  if(LV.client){ LV.client.end(true); LV.client=null; lvStat('rozłączono'); $('#lv-conn').textContent='🔌 połącz z brokerem'; return; }
+  lvStat('ładowanie biblioteki…');
+  try{ await loadMqttLib(); }catch(e){ lvStat('❌ brak internetu (nie można pobrać biblioteki MQTT)','bad'); return; }
+  lvStat('łączenie z broker.hivemq.com…');
+  const cl=window.mqtt.connect('wss://broker.hivemq.com:8884/mqtt',{clientId:'wyklad_'+LV.code+'_'+Math.random().toString(16).slice(2,8),connectTimeout:10000,reconnectPeriod:0,clean:true});
+  LV.client=cl;
+  cl.on('connect',()=>{ cl.subscribe(`wyklad-iot/${LV.code}/#`); lvStat('✔ połączono — czekam na wiadomości','good'); $('#lv-conn').textContent='⏏ rozłącz'; });
+  cl.on('message',(tp,msg)=>lvAdd(tp,new TextDecoder().decode(msg)));
+  cl.on('error',e=>{ lvStat('❌ błąd połączenia: '+esc(e.message||e),'bad'); });
+  cl.on('close',()=>{ if(LV.client===cl&&!cl.connected) { lvStat('rozłączono / brak połączenia','bad'); } });
+});
+$('#lv-send').addEventListener('click',()=>{ const m=$('#lv-msg').value.trim()||'test prowadzącej'; if(!LV.client||!LV.client.connected){ lvStat('najpierw połącz z brokerem','bad'); return; }
+  LV.client.publish(`wyklad-iot/${LV.code}/prowadzaca`,m); $('#lv-msg').value=''; });
+$('#lv-clear').addEventListener('click',()=>$('#lv-board').innerHTML='');
+
+/* ===== 16. bezpieczeństwo ===== */
+const SEC=[['Zmienione domyślne (fabryczne) hasło',30],['Aktualne oprogramowanie (firmware)',20],['Urządzenia IoT w osobnej sieci Wi-Fi (np. sieć gościnna)',20],
+  ['Wyłączony zbędny zdalny dostęp (Telnet, UPnP, otwarte porty)',15],['Szyfrowana komunikacja (TLS)',10],['Sprzęt od producenta, który wydaje aktualizacje',5]];
+(function(){ const box=$('#sec-list'); SEC.forEach(([s,wt],i)=>{ const l=document.createElement('label'); l.innerHTML=`<input type="checkbox" data-w="${wt}"> ${s}`; box.appendChild(l); });
+  box.addEventListener('change',secUpd); })();
+function secUpd(){ const sum=$$('#sec-list input:checked').reduce((a,c)=>a+ +c.dataset.w,0), risk=100-sum;
+  $('#sec-val').textContent=risk>=70?'bardzo wysokie':risk>=40?'wysokie':risk>=15?'umiarkowane':'niskie';
+  const bar=$('#sec-bar'); bar.style.width=Math.max(4,risk)+'%'; bar.style.background=risk>=70?'var(--danger)':risk>=40?'var(--accent2)':risk>=15?'var(--gold)':'var(--accent3)'; }
+secUpd();
+
+/* ---------------- słowniczek ---------------- */
+const glToggle=()=>$('#gloss').classList.toggle('show');
+$('#b-gloss').onclick=glToggle; $('#gl-close').onclick=glToggle;
+$('#gl-print').onclick=()=>{ const wdw=window.open('','slowniczek_iot','width=900,height=700'); if(!wdw) return;
+  wdw.document.write('<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>Słowniczek — IoT</title><style>body{font:13px/1.45 system-ui,sans-serif;margin:18px;color:#111}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:4px 6px;vertical-align:top;text-align:left}h3{margin:14px 0 4px}</style></head><body><h2>Sieci IoT — słowniczek dla prowadzącej</h2>'+$('#gl-body').innerHTML+'</body></html>');
+  wdw.document.close(); wdw.focus(); setTimeout(()=>wdw.print(),300); };
+
+/* ---------------- nawigacja ---------------- */
+const slides=$$('.slide'); let cur=0, spk=null;
+function notesHTML(i){const n=slides[i].querySelector('.notes'); return n?n.innerHTML:'<p class="muted">(brak notatek)</p>';}
+function updSpeaker(){
+  if(!spk||spk.closed) return;
+  const nx=slides[cur+1]?slides[cur+1].querySelector('h1,h2').textContent:'— koniec —';
+  spk.document.body.innerHTML=`<h3 style="margin:0 0 .3em">Slajd ${cur+1}/${slides.length}: ${slides[cur].querySelector('h1,h2').textContent}</h3>${notesHTML(cur)}<hr><p style="color:#777">Następny: ${nx}</p>`;
+}
+function show(i){
+  i=Math.max(0,Math.min(slides.length-1,i));
+  slides[cur].classList.remove('active'); cur=i; slides[cur].classList.add('active');
+  $('#prog div').style.width=(100*(cur+1)/slides.length)+'%'; $('#cnt').textContent=(cur+1)+' / '+slides.length;
+  $('#notes').innerHTML=notesHTML(cur); updSpeaker();
+  history.replaceState(null,'','#'+(cur+1));
+}
+const next=()=>show(cur+1), prev=()=>show(cur-1);
+$('#b-next').onclick=next; $('#b-prev').onclick=prev;
+$('#b-notes').onclick=()=>$('#notes').classList.toggle('show');
+$('#b-theme').onclick=toggleTheme;
+const fsToggle=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+$('#b-fs').onclick=fsToggle;
+function openSpeaker(){
+  spk=window.open('','notatki_prowadzacej_iot','width=760,height=640');
+  if(!spk) return;
+  spk.document.title='Notatki prowadzącej';
+  spk.document.head.innerHTML='<meta charset="utf-8"><style>body{font:18px/1.5 system-ui,sans-serif;padding:16px 22px;background:#fffdf6;color:#222}b{color:#b5520c}.mono{font-family:monospace}</style>';
+  updSpeaker();
+}
+$('#b-spk').onclick=openSpeaker;
+document.addEventListener('keydown',e=>{
+  const tag=e.target.tagName, k=e.key;
+  if(tag==='INPUT'&&(e.target.type==='text'||k.startsWith('Arrow'))) return;
+  if(tag==='SELECT') return;
+  if(k==='ArrowRight'||k==='PageDown'||(k===' '&&tag!=='BUTTON')){e.preventDefault();next();}
+  else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();prev();}
+  else if(k==='Home') show(0); else if(k==='End') show(slides.length-1);
+  else if(k==='n'||k==='N') $('#notes').classList.toggle('show');
+  else if(k==='s'||k==='S') openSpeaker();
+  else if(k==='g'||k==='G') glToggle();
+  else if(k==='f'||k==='F') fsToggle();
+  else if(k==='t'||k==='T') toggleTheme();
+  else if(k==='Escape') $('#gloss').classList.remove('show');
+});
+document.addEventListener('click',e=>{ if(e.target.tagName==='BUTTON') e.target.blur(); });
+
+function loop(now){ NOW=now/1000; const f=frame[slides[cur].id]; if(f){ readColors(); try{f(NOW);}catch(err){console.error(err);} } requestAnimationFrame(loop); }
+show((parseInt(location.hash.slice(1))||1)-1);
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
